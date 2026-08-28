@@ -3,7 +3,6 @@ import {
   Phone,
   Video,
   ShieldCheck,
-  Sparkles,
   Search,
   MoreVertical,
   Paperclip,
@@ -21,7 +20,10 @@ import {
   FileText,
   MapPin,
   ShoppingBag,
-  Wand2,
+  FileEdit,
+  ArrowLeft,
+  MessageSquare,
+  Layers,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { MessageItem } from './MessageItem';
@@ -51,6 +53,7 @@ export const ChatArea: React.FC = () => {
     createInvoiceInChat,
     shareProductInChat,
     jitsiServerConfig,
+    setActiveRoomId,
   } = useChat();
 
   const [inputText, setInputText] = useState('');
@@ -258,9 +261,17 @@ export const ChatArea: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-neutral-950 min-w-0 relative">
       {/* Top Header */}
-      <header className="h-16 px-4 bg-neutral-900/90 backdrop-blur border-b border-neutral-800 flex items-center justify-between z-20 shrink-0 select-none">
-        {/* Room Info */}
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="h-16 px-3 md:px-4 bg-neutral-900/90 backdrop-blur border-b border-neutral-800 flex items-center justify-between z-20 shrink-0 select-none">
+        {/* Room Info & Mobile Back Button */}
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <button
+            onClick={() => setActiveRoomId('')}
+            className="md:hidden p-1.5 -ml-1 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded-xl"
+            title="Back to chats"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
           <div className="relative shrink-0">
             <img
               src={activeRoom.avatar}
@@ -307,23 +318,23 @@ export const ChatArea: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons: Voice Call, Video Call, AI Summary, Menu */}
+        {/* Action Buttons: Voice Call, Video Call, Summary, Menu */}
         <div className="flex items-center gap-1">
-          {/* AI Summarize Button */}
+          {/* Summarize Button */}
           <button
             onClick={handleOpenSummarize}
-            className="px-2.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-            title="Generate AI Conversation Summary"
+            className="px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+            title="Conversation Summary"
           >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">AI Summary</span>
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Summary</span>
           </button>
 
           {/* WebRTC Voice Call */}
           <button
             onClick={() => startCall(activeRoom.id, 'voice')}
             className="p-2 rounded-xl text-neutral-300 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
-            title="Start WebRTC Voice Call"
+            title="Start Voice Call"
           >
             <Phone className="w-4 h-4" />
           </button>
@@ -332,7 +343,7 @@ export const ChatArea: React.FC = () => {
           <button
             onClick={() => startCall(activeRoom.id, 'video')}
             className="p-2 rounded-xl text-neutral-300 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
-            title="Start WebRTC Video Call"
+            title="Start Video Call"
           >
             <Video className="w-4 h-4" />
           </button>
@@ -386,8 +397,8 @@ export const ChatArea: React.FC = () => {
                   }}
                   className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center gap-2"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Simulate Peer Typing</span>
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Simulate Typing</span>
                 </button>
 
                 <button
@@ -397,8 +408,8 @@ export const ChatArea: React.FC = () => {
                   }}
                   className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center gap-2"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Inspect Matrix Session</span>
+                  <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Session Blueprint</span>
                 </button>
               </div>
             )}
@@ -537,12 +548,11 @@ export const ChatArea: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Smart Replies Suggestions Chip Bar */}
+      {/* Suggestions Chip Bar */}
       {showSmartReplies && smartReplies.length > 0 && (
         <div className="px-4 py-1.5 bg-neutral-900/60 border-t border-neutral-800/60 flex items-center gap-2 overflow-x-auto no-scrollbar select-none">
-          <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            Smart Reply:
+          <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider shrink-0">
+            Suggestions:
           </span>
           {smartReplies.map((replyText, i) => (
             <button
@@ -808,16 +818,16 @@ export const ChatArea: React.FC = () => {
                 className="flex-1 bg-transparent text-xs md:text-sm text-neutral-100 placeholder-neutral-500 resize-none focus:outline-none max-h-28"
               />
 
-              {/* AI Tone Rewriter Dropdown */}
+              {/* Tone Formatting Dropdown */}
               {inputText.trim().length > 3 && (
                 <div className="relative group">
                   <button
                     onClick={() => handleAIMagicRewrite('professional')}
                     disabled={isRewriting}
-                    className="p-1 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg transition-colors"
-                    title="AI Polish Tone (Professional, Casual, Friendly)"
+                    className="p-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                    title="Polish Draft"
                   >
-                    <Wand2 className="w-4 h-4" />
+                    <FileEdit className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -831,7 +841,7 @@ export const ChatArea: React.FC = () => {
                     ? 'text-emerald-400 bg-emerald-500/20'
                     : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
                 }`}
-                title="Matrix Emojibase & Custom Emotes Picker"
+                title="Emotes Picker"
               >
                 <Smile className="w-4 h-4" />
               </button>
@@ -859,15 +869,15 @@ export const ChatArea: React.FC = () => {
         )}
       </div>
 
-      {/* AI Summary Modal */}
+      {/* Summary Modal */}
       {summaryModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl animate-scale">
             <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <FileText className="w-5 h-5 text-emerald-400" />
                 <h3 className="text-base font-bold text-neutral-100">
-                  AI Conversation Recap
+                  Conversation Summary
                 </h3>
               </div>
               <button
@@ -881,8 +891,8 @@ export const ChatArea: React.FC = () => {
             <div className="py-4">
               {isSummarizing ? (
                 <div className="py-8 flex flex-col items-center gap-3 text-neutral-400 text-xs">
-                  <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                  <span>Gemini AI is analyzing room messages...</span>
+                  <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <span>Generating summary...</span>
                 </div>
               ) : (
                 <div className="text-xs md:text-sm text-neutral-200 leading-relaxed max-h-80 overflow-y-auto whitespace-pre-wrap">
@@ -893,7 +903,7 @@ export const ChatArea: React.FC = () => {
 
             <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
               <span className="text-[11px] text-neutral-500 font-mono">
-                Powered by Gemini 3.7 Flash & Matrix Engine
+                Matrix Enterprise Secure Engine
               </span>
               <button
                 onClick={() => setSummaryModalOpen(false)}

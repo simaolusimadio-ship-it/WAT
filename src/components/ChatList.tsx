@@ -92,9 +92,6 @@ export const ChatList: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-neutral-100">
               Chats
             </h1>
-            <span className="px-2 py-0.5 text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
-              Synapse v1.98
-            </span>
           </div>
 
           <button
@@ -185,7 +182,7 @@ export const ChatList: React.FC = () => {
                   : 'bg-neutral-800/60 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
               }`}
             >
-              {type === 'e2ee' ? '🔒 E2EE' : type}
+              {type === 'e2ee' ? 'Encrypted' : type}
             </button>
           ))}
         </div>
@@ -226,11 +223,6 @@ export const ChatList: React.FC = () => {
                         isOnline ? 'bg-emerald-500' : 'bg-neutral-600'
                       }`}
                     />
-                  )}
-                  {room.type === 'channel' && (
-                    <span className="absolute -bottom-1 -right-1 bg-cyan-500 text-neutral-950 p-0.5 rounded-full ring-2 ring-neutral-900">
-                      <Sparkles className="w-2.5 h-2.5" />
-                    </span>
                   )}
                 </div>
 

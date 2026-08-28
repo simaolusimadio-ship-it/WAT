@@ -145,6 +145,17 @@ interface ChatContextType {
   generateSmartReplies: (lastMsg: string) => Promise<string[]>;
   rewriteText: (text: string, tone: string) => Promise<string>;
 
+  // Onboarding (WhatsApp Flow)
+  isOnboardingOpen: boolean;
+  setIsOnboardingOpen: (open: boolean) => void;
+  completeOnboarding: (userData: {
+    name: string;
+    phone: string;
+    avatar: string;
+    statusMessage: string;
+    countryCode: string;
+  }) => void;
+
   // Typing simulation
   typingUsers: string[];
   sendTypingNotification: (isTyping: boolean) => void;
@@ -155,7 +166,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [currentUserId, setCurrentUserId] = useState<string>('user_amara');
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
   const [activeRoomId, setActiveRoomId] = useState<string>('room_kwame');
@@ -164,6 +175,52 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [communities] = useState<CommunitySpace[]>(INITIAL_COMMUNITIES);
   const [products] = useState<ProductInfo[]>(INITIAL_PRODUCTS);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+
+  // Onboarding (WhatsApp Flow) state
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem('wat_onboarded_v2');
+    } catch {
+      return false;
+    }
+  });
+
+  const completeOnboarding = (userData: {
+    name: string;
+    phone: string;
+    avatar: string;
+    statusMessage: string;
+    countryCode: string;
+  }) => {
+    const newUserId = 'user_me';
+    const handleSlug = userData.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const updatedMe: User = {
+      id: newUserId,
+      name: userData.name,
+      handle: `@${handleSlug || 'user'}:wat.chat`,
+      avatar: userData.avatar,
+      statusMessage: userData.statusMessage,
+      isOnline: true,
+      phone: userData.phone,
+      deviceId: 'WAT_PRIMARY_SECURE_DEVICE',
+      e2eeFingerprint: 'Xk9P/7Qw2+Vz8My4N1nF9Kj5Rt3sD8hL',
+    };
+
+    setUsers((prev) => {
+      const exists = prev.some((u) => u.id === newUserId);
+      if (exists) {
+        return prev.map((u) => (u.id === newUserId ? updatedMe : u));
+      }
+      return [updatedMe, ...prev];
+    });
+    setCurrentUserId(newUserId);
+    setIsOnboardingOpen(false);
+    try {
+      localStorage.setItem('wat_onboarded_v2', 'true');
+      localStorage.setItem('wat_user_profile_v2', JSON.stringify(updatedMe));
+    } catch (e) {}
+    soundEngine.playMessageSent();
+  };
 
   // Modals & Navigation
   const [activeTab, setActiveTab] = useState<'chats' | 'stories' | 'communities' | 'calls' | 'business' | 'architecture' | 'conference'>('chats');
@@ -1312,6 +1369,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsJitsiDevOpsOpen,
         jitsiServerConfig,
         setJitsiServerConfig,
+        isOnboardingOpen,
+        setIsOnboardingOpen,
+        completeOnboarding,
         summarizeCurrentRoom,
         generateSmartReplies,
         rewriteText,
