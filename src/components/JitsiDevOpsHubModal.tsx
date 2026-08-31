@@ -407,24 +407,24 @@ sudo systemctl restart prosody jicofo jitsi-videobridge2 nginx
 echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fade-in select-none">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-5xl h-[92vh] max-h-[850px] shadow-2xl flex flex-col overflow-hidden text-neutral-100">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fade-in select-none">
+      <div className="bg-white/95 backdrop-blur-2xl border border-black/[0.08] rounded-3xl w-full max-w-5xl h-[92vh] max-h-[850px] shadow-[0_24px_48px_rgba(0,0,0,0.14)] flex flex-col overflow-hidden text-neutral-900">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-neutral-950/90 border-b border-neutral-800 flex items-center justify-between shrink-0">
+        <div className="px-5 py-3.5 bg-white/80 border-b border-black/[0.06] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center shadow-sm">
               <Server className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-neutral-100">
+                <h3 className="text-base font-black text-neutral-900">
                   Jitsi Meet DevOps & Self-Hosting Guide
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-full bg-black/[0.05] text-neutral-700 text-[10px] font-mono border border-black/[0.08]">
                   jitsi.github.io/handbook
                 </span>
               </div>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-500">
                 Deploy, configure, and scale your sovereign WebRTC video conference server
               </p>
             </div>
@@ -435,14 +435,14 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
               href="https://jitsi.github.io/handbook/docs/devops-guide/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold rounded-xl transition-colors border border-neutral-700"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 text-xs font-semibold rounded-xl transition-colors border border-black/[0.08]"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Official Handbook</span>
             </a>
             <button
               onClick={() => setIsJitsiDevOpsOpen(false)}
-              className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+              className="p-2 rounded-xl text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -450,13 +450,13 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-5 py-2 bg-neutral-950/60 border-b border-neutral-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 text-xs font-medium">
+        <div className="px-5 py-2 bg-black/[0.02] border-b border-black/[0.06] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 text-xs font-medium">
           <button
             onClick={() => setActiveTab('architecture')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'architecture'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -467,8 +467,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('docker')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'docker'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
@@ -479,8 +479,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('ubuntu')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'ubuntu'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -491,8 +491,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('matrix_integration')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'matrix_integration'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -503,8 +503,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('octo_scale')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'octo_scale'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Network className="w-3.5 h-3.5" />
@@ -515,8 +515,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('config_generator')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'config_generator'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
@@ -527,8 +527,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('diagnostics')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'diagnostics'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -539,8 +539,8 @@ echo "✅ Sovereign Jitsi Meet installation completed on https://\${DOMAIN}!"`;
             onClick={() => setActiveTab('live_embed')}
             className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'live_embed'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                ? 'bg-black text-white font-bold shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-black/[0.04]'
             }`}
           >
             <Video className="w-3.5 h-3.5" />

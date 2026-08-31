@@ -8,11 +8,19 @@ import {
   StoryStatus,
   CommunitySpace,
   ActiveCall,
+  CallParticipant,
   MatrixEventLog,
   InvoiceInfo,
   ProductInfo,
   LocationInfo,
   JitsiServerConfig,
+  WalletCurrency,
+  WalletTransaction,
+  DiscoverItem,
+  PriorityUrgentItem,
+  PriorityMeetingItem,
+  PriorityPaymentItem,
+  PriorityAIBrief,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -22,8 +30,29 @@ import {
   INITIAL_COMMUNITIES,
   INITIAL_PRODUCTS,
 } from '../data/initialData';
+import {
+  INITIAL_DISCOVER_ITEMS,
+  INITIAL_WALLET_TRANSACTIONS,
+  INITIAL_PRIORITY_URGENT,
+  INITIAL_PRIORITY_MEETINGS,
+  INITIAL_PRIORITY_PAYMENTS,
+  INITIAL_AI_BRIEF,
+} from '../data/discoverAndWalletData';
 import { soundEngine } from '../utils/audioSynth';
 import confetti from 'canvas-confetti';
+
+export type MainNavTab =
+  | 'dashboard'
+  | 'chats'
+  | 'discover'
+  | 'ai'
+  | 'business'
+  | 'you'
+  | 'stories'
+  | 'communities'
+  | 'calls'
+  | 'conference'
+  | 'architecture';
 
 interface ChatContextType {
   // Users & Auth
@@ -39,6 +68,9 @@ interface ChatContextType {
   createRoom: (name: string, type: Room['type'], memberIds: string[], topic?: string) => Room;
   togglePinRoom: (roomId: string) => void;
   toggleMuteRoom: (roomId: string) => void;
+  toggleArchiveRoom: (roomId: string) => void;
+  archiveRoom: (roomId: string) => void;
+  unarchiveRoom: (roomId: string) => void;
   updateDisappearingTimer: (roomId: string, seconds: number) => void;
 
   // Messages
@@ -66,6 +98,7 @@ interface ChatContextType {
 
   // Active Call (WebRTC & Jitsi Meet)
   activeCall: ActiveCall | null;
+  setActiveCall: React.Dispatch<React.SetStateAction<ActiveCall | null>>;
   startCall: (
     roomId: string,
     type: 'voice' | 'video',
@@ -87,6 +120,8 @@ interface ChatContextType {
   endCall: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
+  toggleSpeaker: () => void;
+  addCallParticipant: (user: User) => void;
   toggleScreenShare: () => void;
   toggleCallTileView: () => void;
   toggleCallLowBandwidth: () => void;
@@ -101,18 +136,45 @@ interface ChatContextType {
   addStory: (story: Omit<StoryStatus, 'id' | 'viewsCount' | 'viewed' | 'timestamp'>) => void;
   markStoryViewed: (storyId: string) => void;
 
-  // Business Suite
+  // Business Suite & Mode
   products: ProductInfo[];
   createInvoiceInChat: (amount: number, currency: InvoiceInfo['currency'], description: string, paymentMethod: InvoiceInfo['paymentMethod']) => void;
   shareProductInChat: (product: ProductInfo) => void;
+  businessMode: 'personal' | 'business';
+  setBusinessMode: (mode: 'personal' | 'business') => void;
+  toggleBusinessMode: () => void;
+
+  // WAT Revolut-style Wallet
+  walletBalance: number;
+  setWalletBalance: React.Dispatch<React.SetStateAction<number>>;
+  walletCurrency: WalletCurrency;
+  setWalletCurrency: (c: WalletCurrency) => void;
+  walletTransactions: WalletTransaction[];
+  sendMoney: (amount: number, recipientName: string, recipientHandle: string, note?: string) => void;
+  requestMoney: (amount: number, payerName: string, note?: string) => void;
+
+  // WAT Discover Layer
+  discoverItems: DiscoverItem[];
+  savedDiscoverIds: string[];
+  toggleSaveDiscoverItem: (id: string) => void;
+
+  // Priority Hub & AI Brief
+  priorityUrgent: PriorityUrgentItem[];
+  priorityMeetings: PriorityMeetingItem[];
+  priorityPayments: PriorityPaymentItem[];
+  priorityAIBrief: PriorityAIBrief;
+  dismissPriorityUrgent: (id: string) => void;
+  dismissUrgentItem: (id: string) => void;
+  dismissPriorityPayment: (id: string) => void;
+  settlePriorityPayment: (id: string) => void;
 
   // Architecture & Matrix Events
   matrixLogs: MatrixEventLog[];
   logMatrixEvent: (type: string, endpoint: string, payloadSummary: string, direction?: 'inbound' | 'outbound') => void;
 
   // UI Navigation & Modals
-  activeTab: 'chats' | 'stories' | 'communities' | 'calls' | 'business' | 'architecture' | 'conference';
-  setActiveTab: (tab: 'chats' | 'stories' | 'communities' | 'calls' | 'business' | 'architecture' | 'conference') => void;
+  activeTab: MainNavTab;
+  setActiveTab: (tab: MainNavTab) => void;
   isBlueprintOpen: boolean;
   setIsBlueprintOpen: (open: boolean) => void;
   isE2EEOpen: boolean;
@@ -121,6 +183,11 @@ interface ChatContextType {
   setIsUVSModalOpen: (open: boolean) => void;
   isBusinessSuiteOpen: boolean;
   setIsBusinessSuiteOpen: (open: boolean) => void;
+  isBusinessSettingsOpen: boolean;
+  setIsBusinessSettingsOpen: (open: boolean) => void;
+  businessSettingsSection: any;
+  setBusinessSettingsSection: (section: any) => void;
+  openBusinessSettings: (section?: any) => void;
   isSettingsOpen: boolean;
   setIsSettingsOpen: (open: boolean) => void;
   isUserSwitcherOpen: boolean;
@@ -131,6 +198,10 @@ interface ChatContextType {
   setIsStarredDrawerOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
+  isUniversalSearchOpen: boolean;
+  setIsUniversalSearchOpen: (open: boolean) => void;
+  isCommandCenterOpen: boolean;
+  setIsCommandCenterOpen: (open: boolean) => void;
   isStoryViewerOpen: boolean;
   setIsStoryViewerOpen: (open: boolean) => void;
   selectedStoryIndex: number;
@@ -156,6 +227,14 @@ interface ChatContextType {
     countryCode: string;
   }) => void;
 
+  // User Profiles
+  viewingUserProfile: User | null;
+  setViewingUserProfile: (user: User | null) => void;
+  isEditProfileOpen: boolean;
+  setIsEditProfileOpen: (open: boolean) => void;
+  openUserProfile: (userOrId: string | User) => void;
+  updateUserProfile: (userId: string, updates: Partial<User>) => void;
+
   // Typing simulation
   typingUsers: string[];
   sendTypingNotification: (isTyping: boolean) => void;
@@ -167,7 +246,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [currentUserId, setCurrentUserId] = useState<string>('user_amara');
+  const [currentUserId, setCurrentUserId] = useState<string>('user_lusimadio');
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
   const [activeRoomId, setActiveRoomId] = useState<string>('room_kwame');
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
@@ -176,14 +255,114 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [products] = useState<ProductInfo[]>(INITIAL_PRODUCTS);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
-  // Onboarding (WhatsApp Flow) state
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => {
+  // Business Mode & Wallet
+  const [businessMode, setBusinessMode] = useState<'personal' | 'business'>('personal');
+  const toggleBusinessMode = () => {
+    setBusinessMode((prev) => (prev === 'personal' ? 'business' : 'personal'));
+    soundEngine.playChime();
+  };
+
+  const [walletBalance, setWalletBalance] = useState<number>(24850.0);
+  const [walletCurrency, setWalletCurrency] = useState<WalletCurrency>('ZAR');
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(INITIAL_WALLET_TRANSACTIONS);
+
+  const sendMoney = (amount: number, recipientName: string, recipientHandle: string, note?: string) => {
+    if (amount <= 0 || amount > walletBalance) return;
+    setWalletBalance((prev) => Math.max(0, prev - amount));
+    const newTx: WalletTransaction = {
+      id: `tx_${Date.now()}`,
+      type: 'outgoing',
+      amount,
+      currency: walletCurrency,
+      counterpartyName: recipientName,
+      counterpartyHandle: recipientHandle,
+      counterpartyAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      category: 'Transfer',
+      timestamp: Date.now(),
+      status: 'completed',
+      note: note || 'Peer transfer via WAT Wallet',
+      referenceId: `WAT-TX-${Math.floor(100000 + Math.random() * 900000)}`,
+    };
+    setWalletTransactions((prev) => [newTx, ...prev]);
+    soundEngine.playMessageSent();
     try {
-      return !localStorage.getItem('wat_onboarded_v2');
-    } catch {
-      return false;
+      confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+    } catch {}
+  };
+
+  const requestMoney = (amount: number, payerName: string, note?: string) => {
+    const newTx: WalletTransaction = {
+      id: `tx_${Date.now()}`,
+      type: 'payment_request',
+      amount,
+      currency: walletCurrency,
+      counterpartyName: payerName,
+      category: 'Transfer',
+      timestamp: Date.now(),
+      status: 'pending',
+      note: note || 'Payment request sent',
+      referenceId: `WAT-REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+    };
+    setWalletTransactions((prev) => [newTx, ...prev]);
+    soundEngine.playChime();
+  };
+
+  // Discover Items & Saved
+  const [discoverItems] = useState<DiscoverItem[]>(INITIAL_DISCOVER_ITEMS);
+  const [savedDiscoverIds, setSavedDiscoverIds] = useState<string[]>(['disc_1', 'disc_3']);
+  const toggleSaveDiscoverItem = (id: string) => {
+    setSavedDiscoverIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+    soundEngine.playChime();
+  };
+
+  // Priority Hub
+  const [priorityUrgent, setPriorityUrgent] = useState<PriorityUrgentItem[]>(INITIAL_PRIORITY_URGENT);
+  const [priorityMeetings] = useState<PriorityMeetingItem[]>(INITIAL_PRIORITY_MEETINGS);
+  const [priorityPayments, setPriorityPayments] = useState<PriorityPaymentItem[]>(INITIAL_PRIORITY_PAYMENTS);
+  const [priorityAIBrief] = useState<PriorityAIBrief>(INITIAL_AI_BRIEF);
+
+  const dismissPriorityUrgent = (id: string) => {
+    setPriorityUrgent((prev) => prev.filter((p) => p.id !== id));
+  };
+  const dismissUrgentItem = dismissPriorityUrgent;
+
+  const dismissPriorityPayment = (id: string) => {
+    setPriorityPayments((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const settlePriorityPayment = (id: string) => {
+    const payment = priorityPayments.find((p) => p.id === id);
+    if (payment) {
+      setWalletBalance((prev) => Math.max(0, prev - payment.amount));
+      const newTx: WalletTransaction = {
+        id: `tx_${Date.now()}`,
+        type: 'outgoing',
+        amount: payment.amount,
+        currency: payment.currency as any,
+        counterpartyName: payment.counterpartyName,
+        category: 'Invoice',
+        timestamp: Date.now(),
+        status: 'completed',
+        note: `Settled Invoice ${payment.invoiceId} (${payment.description})`,
+        referenceId: `WAT-INV-${Math.floor(100000 + Math.random() * 900000)}`,
+      };
+      setWalletTransactions((prev) => [newTx, ...prev]);
+      setPriorityPayments((prev) => prev.filter((p) => p.id !== id));
+      soundEngine.playMessageSent();
+      try {
+        confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+      } catch {}
     }
-  });
+  };
+
+  // Universal Search & Command Center
+  const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false);
+  const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
+
+  // Onboarding (WhatsApp Flow) state
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
   const completeOnboarding = (userData: {
     name: string;
@@ -192,12 +371,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     statusMessage: string;
     countryCode: string;
   }) => {
-    const newUserId = 'user_me';
+    const newUserId = 'user_lusimadio';
     const handleSlug = userData.name.toLowerCase().replace(/[^a-z0-9]/g, '');
     const updatedMe: User = {
       id: newUserId,
       name: userData.name,
-      handle: `@${handleSlug || 'user'}:wat.chat`,
+      handle: `@${handleSlug || 'lusimadio'}:wat.chat`,
       avatar: userData.avatar,
       statusMessage: userData.statusMessage,
       isOnline: true,
@@ -215,19 +394,21 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     setCurrentUserId(newUserId);
     setIsOnboardingOpen(false);
-    try {
-      localStorage.setItem('wat_onboarded_v2', 'true');
-      localStorage.setItem('wat_user_profile_v2', JSON.stringify(updatedMe));
-    } catch (e) {}
     soundEngine.playMessageSent();
   };
 
   // Modals & Navigation
-  const [activeTab, setActiveTab] = useState<'chats' | 'stories' | 'communities' | 'calls' | 'business' | 'architecture' | 'conference'>('chats');
+  const [activeTab, setActiveTab] = useState<MainNavTab>('dashboard');
   const [isBlueprintOpen, setIsBlueprintOpen] = useState(false);
   const [isE2EEOpen, setIsE2EEOpen] = useState(false);
   const [isUVSModalOpen, setIsUVSModalOpen] = useState(false);
   const [isBusinessSuiteOpen, setIsBusinessSuiteOpen] = useState(false);
+  const [isBusinessSettingsOpen, setIsBusinessSettingsOpen] = useState(false);
+  const [businessSettingsSection, setBusinessSettingsSection] = useState<any>('profile_account');
+  const openBusinessSettings = (section?: any) => {
+    if (section) setBusinessSettingsSection(section);
+    setIsBusinessSettingsOpen(true);
+  };
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUserSwitcherOpen, setIsUserSwitcherOpen] = useState(false);
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
@@ -255,6 +436,58 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     configDirectory: '~/.jitsi-meet-cfg',
     isCustomServer: false,
   });
+
+  // User Profiles & Profile Editing
+  const [viewingUserProfile, setViewingUserProfile] = useState<User | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+  const openUserProfile = (userOrId: string | User) => {
+    let targetUser: User | undefined;
+    if (typeof userOrId === 'string') {
+      targetUser = users.find((u) => u.id === userOrId || u.handle === userOrId);
+    } else {
+      targetUser = userOrId;
+    }
+    if (targetUser) {
+      setViewingUserProfile(targetUser);
+      soundEngine.playChime();
+    }
+  };
+
+  const updateUserProfile = (userId: string, updates: Partial<User>) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const updated = { ...u, ...updates };
+          if (viewingUserProfile && viewingUserProfile.id === userId) {
+            setViewingUserProfile(updated);
+          }
+          return updated;
+        }
+        return u;
+      })
+    );
+
+    // If updating name or avatar, reflect in direct chat rooms too
+    if (updates.name || updates.avatar) {
+      setRooms((prev) =>
+        prev.map((r) => {
+          if (r.type === 'direct' && r.memberIds.includes(userId)) {
+            const isPeer = userId !== currentUserId;
+            if (isPeer) {
+              return {
+                ...r,
+                name: updates.name || r.name,
+                avatar: updates.avatar || r.avatar,
+              };
+            }
+          }
+          return r;
+        })
+      );
+    }
+    soundEngine.playMessageSent();
+  };
 
   // Active WebRTC Call
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
@@ -413,6 +646,21 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => clearInterval(timer);
   }, []);
 
+  // Active call duration timer
+  useEffect(() => {
+    if (!activeCall || activeCall.status !== 'connected') return;
+
+    const timer = setInterval(() => {
+      setActiveCall((prev) =>
+        prev && prev.status === 'connected'
+          ? { ...prev, duration: prev.duration + 1 }
+          : prev
+      );
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeCall?.status]);
+
   // Send message
   const sendMessage = (params: {
     text: string;
@@ -438,7 +686,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       senderId: currentUser.id,
       senderName: currentUser.name,
       senderAvatar: currentUser.avatar,
-      text: params.text,
+      text: params.text || '',
       timestamp: Date.now(),
       status: 'delivered',
       type: params.type || 'text',
@@ -452,7 +700,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ? {
             id: params.replyTo.id,
             senderName: params.replyTo.senderName,
-            text: params.replyTo.text,
+            text: params.replyTo.text || '',
             type: params.replyTo.type,
           }
         : undefined,
@@ -466,10 +714,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     soundEngine.playMessageSent();
 
     // Log Matrix Synapse CS-API event
+    const snippet = params.text ? `${params.text.slice(0, 35)}...` : params.type || 'media';
     logMatrixEvent(
       activeRoom.isEncrypted ? 'm.room.encrypted' : 'm.room.message',
       `/_matrix/client/v3/rooms/${activeRoom.id}/send/m.room.message/${newMsg.id}`,
-      `Sent ${params.type || 'text'} event (${params.text.slice(0, 35)}...)`
+      `Sent ${params.type || 'text'} event (${snippet})`
     );
 
     setMessagesByRoom((prev) => ({
@@ -950,6 +1199,58 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   };
 
+  const toggleArchiveRoom = (roomId: string) => {
+    setRooms((prev) =>
+      prev.map((r) => {
+        if (r.id === roomId) {
+          const nextArchived = !r.isArchived;
+          logMatrixEvent(
+            'm.room.archive',
+            `/_matrix/client/v3/rooms/${roomId}/tags`,
+            `${nextArchived ? 'Archived' : 'Unarchived'} room "${r.name}"`
+          );
+          return { ...r, isArchived: nextArchived };
+        }
+        return r;
+      })
+    );
+    soundEngine.playChime();
+  };
+
+  const archiveRoom = (roomId: string) => {
+    setRooms((prev) =>
+      prev.map((r) => {
+        if (r.id === roomId) {
+          logMatrixEvent(
+            'm.room.archive',
+            `/_matrix/client/v3/rooms/${roomId}/tags`,
+            `Archived room "${r.name}"`
+          );
+          return { ...r, isArchived: true };
+        }
+        return r;
+      })
+    );
+    soundEngine.playChime();
+  };
+
+  const unarchiveRoom = (roomId: string) => {
+    setRooms((prev) =>
+      prev.map((r) => {
+        if (r.id === roomId) {
+          logMatrixEvent(
+            'm.room.unarchive',
+            `/_matrix/client/v3/rooms/${roomId}/tags`,
+            `Unarchived room "${r.name}"`
+          );
+          return { ...r, isArchived: false };
+        }
+        return r;
+      })
+    );
+    soundEngine.playChime();
+  };
+
   const updateDisappearingTimer = (roomId: string, seconds: number) => {
     setRooms((prev) =>
       prev.map((r) =>
@@ -1003,14 +1304,14 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       status: 'ringing',
       duration: 0,
       isMuted: false,
-      isCameraOff: false,
+      isCameraOff: type === 'voice',
       isScreenSharing: false,
       isSpeakerOn: true,
       isE2EEEnabled: true,
       e2eeKey: 'wat_e2ee_' + Math.random().toString(36).substring(2, 10),
       jitsiDomain: domain,
       jitsiRoomName: cleanRoomName,
-      conferenceMode: options?.mode || 'jitsi_iframe',
+      conferenceMode: options?.mode || (type === 'voice' ? 'interactive_mesh' : 'interactive_mesh'),
       isTileView: true,
       isLowBandwidth: false,
       isMobileLayout: isMobile,
@@ -1150,6 +1451,32 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   };
 
+  const toggleSpeaker = () => {
+    setActiveCall((prev) =>
+      prev ? { ...prev, isSpeakerOn: !prev.isSpeakerOn } : null
+    );
+  };
+
+  const addCallParticipant = (user: User) => {
+    setActiveCall((prev) => {
+      if (!prev) return null;
+      const alreadyIn = prev.participants.some((p) => p.id === user.id);
+      if (alreadyIn) return prev;
+      const newParticipant: CallParticipant = {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        isSpeaking: false,
+        isMuted: false,
+        hasVideo: prev.type === 'video',
+      };
+      return {
+        ...prev,
+        participants: [...prev.participants, newParticipant],
+      };
+    });
+  };
+
   const toggleScreenShare = () => {
     setActiveCall((prev) =>
       prev ? { ...prev, isScreenSharing: !prev.isScreenSharing } : null
@@ -1210,9 +1537,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const markStoryViewed = (storyId: string) => {
-    setStories((prev) =>
-      prev.map((s) => (s.id === storyId ? { ...s, viewed: true } : s))
-    );
+    setStories((prev) => {
+      const target = prev.find((s) => s.id === storyId);
+      if (!target || target.viewed) return prev;
+      return prev.map((s) => (s.id === storyId ? { ...s, viewed: true } : s));
+    });
   };
 
   // Business invoice creator in chat
@@ -1307,6 +1636,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createRoom,
         togglePinRoom,
         toggleMuteRoom,
+        toggleArchiveRoom,
+        archiveRoom,
+        unarchiveRoom,
         updateDisappearingTimer,
         messages,
         allMessages: messagesByRoom,
@@ -1320,11 +1652,14 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         transcribeMessage,
         payInvoice,
         activeCall,
+        setActiveCall,
         startCall,
         startJitsiConference,
         endCall,
         toggleMute,
         toggleCamera,
+        toggleSpeaker,
+        addCallParticipant,
         toggleScreenShare,
         toggleCallTileView,
         toggleCallLowBandwidth,
@@ -1343,6 +1678,31 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logMatrixEvent,
         activeTab,
         setActiveTab,
+        businessMode,
+        setBusinessMode,
+        toggleBusinessMode,
+        walletBalance,
+        setWalletBalance,
+        walletCurrency,
+        setWalletCurrency,
+        walletTransactions,
+        sendMoney,
+        requestMoney,
+        discoverItems,
+        savedDiscoverIds,
+        toggleSaveDiscoverItem,
+        priorityUrgent,
+        priorityMeetings,
+        priorityPayments,
+        priorityAIBrief,
+        dismissPriorityUrgent,
+        dismissUrgentItem,
+        dismissPriorityPayment,
+        settlePriorityPayment,
+        isUniversalSearchOpen,
+        setIsUniversalSearchOpen,
+        isCommandCenterOpen,
+        setIsCommandCenterOpen,
         isBlueprintOpen,
         setIsBlueprintOpen,
         isE2EEOpen,
@@ -1351,6 +1711,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsUVSModalOpen,
         isBusinessSuiteOpen,
         setIsBusinessSuiteOpen,
+        isBusinessSettingsOpen,
+        setIsBusinessSettingsOpen,
+        businessSettingsSection,
+        setBusinessSettingsSection,
+        openBusinessSettings,
         isSettingsOpen,
         setIsSettingsOpen,
         isUserSwitcherOpen,
@@ -1372,6 +1737,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isOnboardingOpen,
         setIsOnboardingOpen,
         completeOnboarding,
+        viewingUserProfile,
+        setViewingUserProfile,
+        isEditProfileOpen,
+        setIsEditProfileOpen,
+        openUserProfile,
+        updateUserProfile,
         summarizeCurrentRoom,
         generateSmartReplies,
         rewriteText,

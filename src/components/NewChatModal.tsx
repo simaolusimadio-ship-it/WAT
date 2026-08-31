@@ -36,39 +36,39 @@ export const NewChatModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in select-none">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in select-none">
+      <div className="bg-white/95 backdrop-blur-2xl border border-black/[0.08] rounded-3xl w-full max-w-md shadow-[0_24px_48px_rgba(0,0,0,0.14)] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 bg-neutral-950/80 border-b border-neutral-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-white/60 border-b border-black/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-black/[0.05] text-neutral-900 border border-black/[0.08] flex items-center justify-center">
               <Plus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-100">
+              <h3 className="text-base font-bold text-neutral-900">
                 New Matrix Room
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-500">
                 Start a direct encrypted chat or multi-user group
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsNewChatModalOpen(false)}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white"
+            className="p-1.5 rounded-full text-neutral-500 hover:text-black hover:bg-black/[0.05] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switch: Direct vs Group */}
-        <div className="p-4 border-b border-neutral-800 flex gap-2">
+        <div className="p-4 border-b border-black/[0.06] flex gap-2">
           <button
             onClick={() => setChatType('direct')}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
               chatType === 'direct'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                : 'bg-neutral-950 text-neutral-400'
+                ? 'bg-black text-white shadow-sm'
+                : 'bg-black/[0.04] text-neutral-600 hover:text-black'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -76,10 +76,10 @@ export const NewChatModal: React.FC = () => {
           </button>
           <button
             onClick={() => setChatType('group')}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
               chatType === 'group'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                : 'bg-neutral-950 text-neutral-400'
+                ? 'bg-black text-white shadow-sm'
+                : 'bg-black/[0.04] text-neutral-600 hover:text-black'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -91,38 +91,38 @@ export const NewChatModal: React.FC = () => {
         <div className="p-4 max-h-80 overflow-y-auto space-y-3">
           {chatType === 'direct' ? (
             <div className="space-y-2">
-              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider block">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                 Select Contact to Message
               </span>
               {contacts.map((contact) => (
                 <div
                   key={contact.id}
                   onClick={() => handleStartDirectChat(contact)}
-                  className="p-2.5 rounded-2xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 cursor-pointer flex items-center justify-between transition-colors"
+                  className="p-2.5 rounded-2xl bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.06] cursor-pointer flex items-center justify-between transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <img
                       src={contact.avatar}
                       alt={contact.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full object-cover border border-black/10"
                     />
                     <div>
-                      <h4 className="text-xs font-bold text-neutral-100">
+                      <h4 className="text-xs font-bold text-neutral-900">
                         {contact.name}
                       </h4>
-                      <p className="text-[10px] font-mono text-neutral-400">
+                      <p className="text-[10px] font-mono text-neutral-500">
                         {contact.handle}
                       </p>
                     </div>
                   </div>
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  <Lock className="w-3.5 h-3.5 text-neutral-400" />
                 </div>
               ))}
             </div>
           ) : (
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                   Group Room Name
                 </label>
                 <input
@@ -130,12 +130,12 @@ export const NewChatModal: React.FC = () => {
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   placeholder="e.g. Lagos FinTech Engineers"
-                  className="w-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full mt-1 bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-black"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                   Room Topic
                 </label>
                 <input
@@ -143,12 +143,12 @@ export const NewChatModal: React.FC = () => {
                   value={groupTopic}
                   onChange={(e) => setGroupTopic(e.target.value)}
                   placeholder="Brief room purpose"
-                  className="w-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full mt-1 bg-black/[0.03] border border-black/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-black"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block mb-1">
+                <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
                   Add Members ({selectedUserIds.length} selected)
                 </label>
                 <div className="space-y-1.5">
@@ -158,8 +158,8 @@ export const NewChatModal: React.FC = () => {
                       onClick={() => toggleUserSelection(contact.id)}
                       className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-colors ${
                         selectedUserIds.includes(contact.id)
-                          ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
-                          : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                          ? 'bg-black text-white border-black'
+                          : 'bg-black/[0.02] border-black/[0.06] text-neutral-800 hover:bg-black/[0.05]'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -183,11 +183,11 @@ export const NewChatModal: React.FC = () => {
 
         {/* Footer */}
         {chatType === 'group' && (
-          <div className="p-4 bg-neutral-950/80 border-t border-neutral-800 flex justify-end">
+          <div className="p-4 bg-white/60 border-t border-black/[0.06] flex justify-end">
             <button
               onClick={handleCreateGroup}
               disabled={!groupName.trim()}
-              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-neutral-950 font-bold text-xs shadow-md"
+              className="px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 disabled:opacity-40 text-white font-bold text-xs shadow-md transition-all active:scale-95"
             >
               Create Encrypted Room
             </button>

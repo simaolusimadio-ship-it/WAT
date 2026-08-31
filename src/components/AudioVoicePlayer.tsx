@@ -137,32 +137,32 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
       <div
         className={`rounded-2xl p-3 border transition-colors ${
           isOwn
-            ? 'bg-neutral-950/40 border-emerald-500/30 text-neutral-100'
-            : 'bg-neutral-900/90 border-neutral-700/70 text-neutral-100'
+            ? 'bg-white/10 border-white/20 text-white'
+            : 'bg-black/[0.02] border-black/[0.08] text-neutral-900'
         }`}
       >
         {/* Top Header: Voice Note Tag & Codec Details */}
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-700/40 text-[11px]">
-          <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
+        <div className={`flex items-center justify-between pb-2 mb-2 border-b text-[11px] ${isOwn ? 'border-white/15' : 'border-black/[0.06]'}`}>
+          <div className="flex items-center gap-1.5 font-bold">
             <FileAudio className="w-3.5 h-3.5" />
-            <span>Matrix Voice Note</span>
-            <span className="text-[9px] font-mono px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded">
+            <span>Voice Note</span>
+            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md ${isOwn ? 'bg-white/20 text-white' : 'bg-black/[0.05] text-neutral-700'}`}>
               Opus 48kHz
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-neutral-400 text-[10px]">
+          <div className={`flex items-center gap-2 text-[10px] ${isOwn ? 'text-white/70' : 'text-neutral-500'}`}>
             <span>{message.mediaInfo?.fileSize || '380 KB'}</span>
             <button
               type="button"
               onClick={() => setIsMuted(!isMuted)}
-              className="p-1 hover:text-neutral-200 transition-colors"
+              className="p-1 hover:opacity-80 transition-opacity"
               title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? (
                 <VolumeX className="w-3.5 h-3.5 text-rose-400" />
               ) : (
-                <Volume2 className="w-3.5 h-3.5 text-neutral-300" />
+                <Volume2 className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
@@ -174,16 +174,17 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
           <button
             type="button"
             onClick={togglePlay}
-            className="relative w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 hover:from-emerald-500 hover:to-teal-300 text-neutral-950 flex items-center justify-center font-bold shadow-lg transition-transform active:scale-90 shrink-0"
+            className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold shadow transition-transform active:scale-90 shrink-0 ${
+              isOwn
+                ? 'bg-white text-black hover:bg-neutral-100'
+                : 'bg-black text-white hover:bg-neutral-800'
+            }`}
             title={isPlaying ? 'Pause' : 'Play Voice Note'}
           >
             {isPlaying ? (
-              <Pause className="w-5 h-5 fill-current" />
+              <Pause className="w-4 h-4 fill-current" />
             ) : (
-              <Play className="w-5 h-5 fill-current ml-0.5" />
-            )}
-            {isPlaying && (
-              <span className="absolute -inset-0.5 rounded-full border border-emerald-400 animate-ping opacity-30" />
+              <Play className="w-4 h-4 fill-current ml-0.5" />
             )}
           </button>
 
@@ -199,13 +200,15 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
                 setHoverSeekTime(null);
               }}
               onMouseMove={handleWaveformMouseMove}
-              className="relative flex items-center gap-0.5 h-9 px-1 rounded-xl cursor-pointer hover:bg-neutral-800/50 transition-colors group"
+              className={`relative flex items-center gap-0.5 h-8 px-1 rounded-xl cursor-pointer transition-colors group ${
+                isOwn ? 'hover:bg-white/10' : 'hover:bg-black/[0.04]'
+              }`}
               title="Click or drag to seek voice note"
             >
               {/* Hover seek time preview tooltip */}
               {isHoveringSeek && hoverSeekTime !== null && (
                 <div
-                  className="absolute -top-5 transform -translate-x-1/2 bg-neutral-900 border border-neutral-700 text-emerald-400 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shadow-lg pointer-events-none z-10"
+                  className="absolute -top-5 transform -translate-x-1/2 bg-white border border-black/[0.08] text-neutral-900 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shadow-lg pointer-events-none z-10"
                   style={{
                     left: `${(hoverSeekTime / duration) * 100}%`,
                   }}
@@ -226,11 +229,15 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
                     key={i}
                     className={`flex-1 rounded-full transition-all duration-150 ${
                       isPlayed
-                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
-                        : 'bg-neutral-600/70 group-hover:bg-neutral-500'
-                    } ${isCurrent ? 'scale-y-125 bg-white' : ''}`}
+                        ? isOwn
+                          ? 'bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)]'
+                          : 'bg-black shadow-[0_0_6px_rgba(0,0,0,0.2)]'
+                        : isOwn
+                        ? 'bg-white/30 group-hover:bg-white/50'
+                        : 'bg-black/20 group-hover:bg-black/35'
+                    } ${isCurrent ? 'scale-y-125' : ''}`}
                     style={{
-                      height: `${Math.max(18, barHeight * 100)}%`,
+                      height: `${Math.max(20, barHeight * 100)}%`,
                     }}
                   />
                 );
@@ -246,16 +253,20 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => handleSeek(parseFloat(e.target.value))}
-                className="w-full h-1 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-emerald-400 focus:outline-none"
+                className={`w-full h-1 rounded-lg appearance-none cursor-pointer focus:outline-none ${
+                  isOwn
+                    ? 'bg-white/20 accent-white'
+                    : 'bg-black/15 accent-black'
+                }`}
               />
             </div>
           </div>
         </div>
 
         {/* Footer: Elapsed / Duration Time, Quick Skip, Speed Pill */}
-        <div className="flex items-center justify-between mt-2 pt-1.5 text-[11px] font-mono text-neutral-400">
+        <div className={`flex items-center justify-between mt-2 pt-1.5 text-[11px] font-mono ${isOwn ? 'text-white/70' : 'text-neutral-500'}`}>
           <div className="flex items-center gap-1">
-            <span className="font-bold text-emerald-400">
+            <span className={`font-bold ${isOwn ? 'text-white' : 'text-neutral-900'}`}>
               {formatSeconds(currentTime)}
             </span>
             <span>/</span>
@@ -267,7 +278,9 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
             <button
               type="button"
               onClick={() => skipRelative(-5)}
-              className="p-1 text-neutral-400 hover:text-neutral-200 transition-colors rounded hover:bg-neutral-800"
+              className={`p-1 rounded transition-colors ${
+                isOwn ? 'hover:bg-white/10 hover:text-white' : 'hover:bg-black/[0.05] hover:text-black'
+              }`}
               title="Rewind 5 seconds"
             >
               <RotateCcw className="w-3 h-3" />
@@ -277,7 +290,11 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
             <button
               type="button"
               onClick={cyclePlaybackRate}
-              className="px-2 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[10px] border border-emerald-500/40 transition-colors active:scale-95"
+              className={`px-2 py-0.5 rounded-full font-bold text-[10px] border transition-colors active:scale-95 ${
+                isOwn
+                  ? 'bg-white/20 hover:bg-white/30 text-white border-white/30'
+                  : 'bg-black/[0.06] hover:bg-black/[0.1] text-neutral-900 border-black/[0.1]'
+              }`}
               title="Change playback speed"
             >
               {playbackRate}x
@@ -287,34 +304,42 @@ export const AudioVoicePlayer: React.FC<AudioVoicePlayerProps> = ({
 
         {/* AI Voice Note Transcription Section */}
         {message.transcription ? (
-          <div className="mt-2.5 pt-2 border-t border-neutral-700/50">
-            <div className="flex items-center justify-between text-[10px] font-semibold text-emerald-400 mb-1">
+          <div className={`mt-2.5 pt-2 border-t ${isOwn ? 'border-white/15' : 'border-black/[0.06]'}`}>
+            <div className="flex items-center justify-between text-[10px] font-semibold mb-1">
               <button
                 type="button"
                 onClick={() => setShowTranscription(!showTranscription)}
                 className="flex items-center gap-1 hover:underline"
               >
-                <Sparkles className="w-3 h-3 text-cyan-400" />
+                <Sparkles className="w-3 h-3" />
                 <span>AI Transcript {showTranscription ? '▼' : '▶'}</span>
               </button>
-              <span className="text-[9px] text-neutral-500 font-mono">
+              <span className={`text-[9px] font-mono ${isOwn ? 'text-white/60' : 'text-neutral-400'}`}>
                 Whisper AI
               </span>
             </div>
 
             {showTranscription && (
-              <p className="italic text-[11px] leading-relaxed text-neutral-200 bg-neutral-900/80 p-2 rounded-xl border border-neutral-700/50">
+              <p className={`italic text-[11px] leading-relaxed p-2 rounded-xl border ${
+                isOwn
+                  ? 'bg-white/10 border-white/15 text-white'
+                  : 'bg-black/[0.03] border-black/[0.06] text-neutral-800'
+              }`}>
                 "{message.transcription}"
               </p>
             )}
           </div>
         ) : onTranscribe ? (
-          <div className="mt-2 pt-2 border-t border-neutral-700/40">
+          <div className={`mt-2 pt-2 border-t ${isOwn ? 'border-white/15' : 'border-black/[0.06]'}`}>
             <button
               type="button"
               onClick={onTranscribe}
               disabled={isTranscribing}
-              className="w-full flex items-center justify-center gap-1.5 py-1 px-2 text-[11px] text-cyan-300 hover:text-cyan-100 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition-colors font-medium disabled:opacity-50"
+              className={`w-full flex items-center justify-center gap-1.5 py-1 px-2 text-[11px] border rounded-xl transition-colors font-medium disabled:opacity-50 ${
+                isOwn
+                  ? 'bg-white/15 hover:bg-white/25 text-white border-white/30'
+                  : 'bg-black/[0.05] hover:bg-black/[0.1] text-neutral-900 border-black/[0.1]'
+              }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>

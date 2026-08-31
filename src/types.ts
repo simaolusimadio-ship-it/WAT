@@ -1,19 +1,35 @@
+export interface SocialLink {
+  platform: 'website' | 'twitter' | 'github' | 'linkedin' | 'instagram' | 'telegram' | 'youtube' | 'custom';
+  url: string;
+  label?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   handle: string; // e.g. @amara:wat.chat
   avatar: string;
   statusMessage: string;
+  bio?: string;
+  website?: string;
+  socialLinks?: SocialLink[];
   isOnline: boolean;
   lastSeen?: string;
   phone?: string;
   email?: string;
   location?: string;
+  joinedDate?: string;
   isBusiness?: boolean;
+  businessDetails?: {
+    category?: string;
+    description?: string;
+    hours?: string;
+  };
   verified?: boolean;
   deviceId: string;
   e2eeFingerprint: string;
   isBot?: boolean;
+  customStatus?: string;
 }
 
 export type RoomType = 'direct' | 'group' | 'channel' | 'community';
@@ -196,7 +212,7 @@ export interface ActiveCall {
   roomName: string;
   roomAvatar: string;
   type: 'voice' | 'video';
-  status: 'ringing' | 'connected' | 'ended';
+  status: 'connecting' | 'ringing' | 'connected' | 'ended';
   startTime?: number;
   duration: number;
   isMuted: boolean;
@@ -347,4 +363,93 @@ export interface JitsiComponentStatus {
   status: 'healthy' | 'active' | 'warning' | 'standby';
   description: string;
 }
+
+// WAT Fintech Wallet Types
+export type WalletCurrency = 'ZAR' | 'USD' | 'KES' | 'NGN' | 'EUR' | 'GHS';
+
+export interface WalletTransaction {
+  id: string;
+  type: 'incoming' | 'outgoing' | 'payment_request' | 'invoice_settlement';
+  amount: number;
+  currency: WalletCurrency;
+  counterpartyName: string;
+  counterpartyHandle?: string;
+  counterpartyAvatar?: string;
+  category: 'Business' | 'Transfer' | 'Services' | 'Marketplace' | 'AI Assistant' | 'Invoice';
+  timestamp: number;
+  status: 'completed' | 'pending' | 'failed';
+  note?: string;
+  referenceId?: string;
+}
+
+// WAT Discover Layer Types
+export type DiscoverCategory =
+  | 'trending'
+  | 'businesses'
+  | 'services'
+  | 'products'
+  | 'communities'
+  | 'events'
+  | 'channels'
+  | 'nearby';
+
+export interface DiscoverItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: DiscoverCategory;
+  image: string;
+  badge?: string;
+  rating?: number;
+  reviewCount?: number;
+  location?: string;
+  distanceKm?: number;
+  priceTag?: string;
+  verified?: boolean;
+  tags: string[];
+  actionLabel: string;
+  authorName?: string;
+  authorHandle?: string;
+  authorAvatar?: string;
+  membersCount?: number;
+  eventDate?: string;
+  description?: string;
+}
+
+// Priority Hub & AI Brief Types
+export interface PriorityUrgentItem {
+  id: string;
+  roomId: string;
+  senderName: string;
+  senderAvatar: string;
+  previewText: string;
+  timeAgo: string;
+  priorityTag: 'High Priority' | 'Client Proposal' | 'Overdue Action';
+}
+
+export interface PriorityMeetingItem {
+  id: string;
+  title: string;
+  time: string;
+  roomId: string;
+  participants: { name: string; avatar: string }[];
+  type: 'voice' | 'video';
+}
+
+export interface PriorityPaymentItem {
+  id: string;
+  amount: number;
+  currency: WalletCurrency;
+  counterpartyName: string;
+  dueDate: string;
+  invoiceId: string;
+  description: string;
+}
+
+export interface PriorityAIBrief {
+  summary: string;
+  bulletPoints: string[];
+  keyActions: string[];
+}
+
 

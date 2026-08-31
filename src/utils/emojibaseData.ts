@@ -622,18 +622,19 @@ export const EMOJIBASE_DATASET: EmojibaseItem[] = [
 /**
  * Searches the standardized Emojibase dataset by keyword, shortcode, or tag
  */
-export function searchEmojibase(query: string, category?: EmojiCategory): EmojibaseItem[] {
-  const cleanQuery = query.toLowerCase().trim().replace(/^:/, '').replace(/:$/, '');
+export function searchEmojibase(query: string = '', category?: EmojiCategory): EmojibaseItem[] {
+  if (!query && !category) return EMOJIBASE_DATASET;
+  const cleanQuery = (query || '').toLowerCase().trim().replace(/^:/, '').replace(/:$/, '');
   
   return EMOJIBASE_DATASET.filter((item) => {
     if (category && item.category !== category) return false;
     if (!cleanQuery) return true;
 
     return (
-      item.label.toLowerCase().includes(cleanQuery) ||
-      item.shortcodes.some((sc) => sc.toLowerCase().includes(cleanQuery)) ||
-      item.tags.some((t) => t.toLowerCase().includes(cleanQuery)) ||
-      item.emoji.includes(cleanQuery)
+      (item.label && item.label.toLowerCase().includes(cleanQuery)) ||
+      (item.shortcodes && item.shortcodes.some((sc) => sc.toLowerCase().includes(cleanQuery))) ||
+      (item.tags && item.tags.some((t) => t.toLowerCase().includes(cleanQuery))) ||
+      (item.emoji && item.emoji.includes(cleanQuery))
     );
   });
 }
@@ -653,6 +654,7 @@ export function getEmojiWithSkinTone(item: EmojibaseItem, tone: EmojiSkinTone): 
  * Checks if the text ends with an unclosed shortcode trigger like ':smi'
  */
 export function extractActiveShortcode(text: string): { activeQuery: string; startIndex: number } | null {
+  if (!text || typeof text !== 'string') return null;
   const match = text.match(/:([a-zA-Z0-9_\-+]{1,20})$/);
   if (match && match.index !== undefined) {
     return {

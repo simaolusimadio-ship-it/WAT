@@ -98,112 +98,107 @@ redis:
       configSnippet: `-- Synapse core schema sample
 SELECT event_id, room_id, type, sender, origin_server_ts, content
 FROM events 
-WHERE room_id = '!nZ4bQ:wat.chat' 
-ORDER BY origin_server_ts DESC LIMIT 50;`,
+WHERE room_id = '!africabiz:wat.chat' 
+ORDER BY stream_ordering DESC 
+LIMIT 50;`,
     },
     redis: {
-      title: 'Redis Ephemeral Cache & Pub/Sub',
-      tag: 'HIGH-THROUGHPUT PUB/SUB',
+      title: 'Redis Worker Replication & Cache',
+      tag: 'IN-MEMORY PUB/SUB',
       description:
-        'Coordinates real-time sync workers, typing notifications, presence broadcasts, and rate limiting across Synapse worker clusters.',
-      tech: 'Redis 7.2 (In-Memory + Pub/Sub)',
+        'Inter-process messaging between Synapse worker instances, presence broadcasting, sliding sync caching, and rate-limiting buckets.',
+      tech: 'Redis 7.2 Cluster (In-Memory)',
       port: '6379',
-      status: 'Cluster Online • 18k ops/sec',
-      configSnippet: `# Redis Pub/Sub channels
-SUBSCRIBE "matrix:presence"
-SUBSCRIBE "matrix:typing:room_!nZ4bQ"
-PUBLISH "matrix:sync:device_amara_web" '{"event":"m.room.message"}'`,
+      status: 'Operating • 0.8ms latency',
+      configSnippet: `# Redis Worker Bus Stream
+XADD synapse_stream * worker_id sync_worker_3 event_type m.room.message room_id !africabiz:wat.chat`,
     },
-    minio: {
-      title: 'MinIO / S3 Object Storage',
+    s3: {
+      title: 'Sovereign Media Object Store (MinIO/S3)',
       tag: 'MEDIA REPOSITORY',
       description:
-        'S3-compatible distributed object storage for encrypted voice notes, high-res photos, videos, and document media artifacts.',
-      tech: 'MinIO Distributed Object Store',
-      port: '9000 / 9001 (Console)',
-      status: 'Encrypted at Rest (AES-256-GCM)',
-      configSnippet: `# Media repository s3 storage backend
+        'Content-addressable encrypted media storage for voice notes, HD images, video snippets, and catalog documents.',
+      tech: 'MinIO / S3 Encrypted Storage',
+      port: '9000',
+      status: 'Operating • 99.99% Durability',
+      configSnippet: `# media_repository config
 media_storage_providers:
   - module: synapse_s3_storage_provider.S3StorageProviderExtension
     config:
-      bucket: "wat-synapse-media"
-      endpoint_url: "https://s3.wat.chat"
-      region_name: "af-south-1"`,
+      bucket: wat-media-sovereign-af-south
+      endpoint_url: https://s3.af-south-1.wat.chat`,
     },
-    ai_api: {
-      title: 'WAT Custom API & AI Engine',
-      tag: 'BUSINESS & INTELLIGENCE LAYER',
+    jitsi: {
+      title: 'Jitsi Meet SFU (JVB2 + Prosody + Jicofo)',
+      tag: 'SELECTIVE FORWARDING UNIT',
       description:
-        'Dedicated backend handling Mobile Money settlements (M-Pesa, MTN MoMo), Merchant catalog management, and Gemini AI smart features (Translation, Transcription, Conversation summaries).',
-      tech: 'Node.js Express + @google/genai (Gemini 3.7 Flash)',
-      port: '3000 (/api/*)',
-      status: 'Optimal • 0.3s AI Latency',
-      configSnippet: `// Server-Side Gemini API Proxy in server.ts
-import { GoogleGenAI } from "@google/genai";
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: prompt,
-});`,
+        'MatrixRTC conference bridge routing multi-participant voice/video tracks with bandwidth estimation, Simulcast, and E2EE Insertable Streams.',
+      tech: 'JVB2 (Java/WebRTC) + Prosody XMPP',
+      port: '10000/UDP (JVB) & 443 (HTTPS)',
+      status: 'Healthy • SFU Cluster active',
+      configSnippet: `# jvb.conf snippet
+videobridge {
+  http-servers {
+    public {
+      port = 9090
+    }
+  }
+  websockets {
+    enabled = true
+    server-id = "jvb-af-south-01"
+  }
+}`,
     },
   };
 
-  const currentDetail = nodeDetails[selectedNode] || nodeDetails.synapse;
+  const currentNode = nodeDetails[selectedNode] || nodeDetails.synapse;
 
   const copySnippet = () => {
-    navigator.clipboard.writeText(currentDetail.configSnippet);
+    navigator.clipboard.writeText(currentNode.configSnippet);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleSimulateSync = () => {
-    logMatrixEvent(
-      'm.room.encrypted',
-      `/_matrix/client/v3/sync?filter=10294`,
-      `Sync roundtrip: 0 new events, 12 presence updates`
-    );
-  };
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-fade-in select-none">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 bg-neutral-950/80 border-b border-neutral-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none animate-fade-in">
+      <div className="bg-white/95 backdrop-blur-2xl border border-black/[0.08] rounded-3xl w-full max-w-5xl shadow-[0_24px_48px_rgba(0,0,0,0.14)] overflow-hidden flex flex-col max-h-[92vh] text-neutral-900">
+        {/* Modal Header */}
+        <div className="px-6 py-4 bg-white/80 border-b border-black/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center shadow-sm">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-neutral-100 flex items-center gap-2">
-                <span>WAT Matrix Architecture Blueprint</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono border border-emerald-500/40">
-                  LIVE INSPECTOR
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-neutral-900">
+                  Matrix Sovereign Architecture Blueprint
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-black/[0.05] text-neutral-700 text-[10px] font-mono border border-black/[0.08]">
+                  Matrix 2.0 Spec (MSC3861 / MSC3401)
                 </span>
-              </h2>
-              <p className="text-xs text-neutral-400">
-                Interactive architecture map, Synapse topology, and live Matrix CS-API event streaming
+              </div>
+              <p className="text-xs text-neutral-500">
+                Live interactive topology, decentralized data flow, and cryptographic boundary mapping
               </p>
             </div>
           </div>
-
           <button
             onClick={() => setIsBlueprintOpen(false)}
-            className="p-2 rounded-xl text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+            className="p-1.5 rounded-xl text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body: Left visual topology diagram, Right spec inspector */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-neutral-800">
+        {/* Modal Body: Two-Column Topology Graph & Node Inspector */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
           {/* Left Column: Interactive Topology Node Graph */}
-          <div className="lg:col-span-7 p-6 overflow-y-auto bg-neutral-950/40 space-y-4">
+          <div className="lg:col-span-7 p-6 overflow-y-auto bg-black/[0.02] space-y-4 custom-scrollbar">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
                 System Topology & Component Graph
               </span>
-              <span className="text-[10px] font-mono text-cyan-400">
+              <span className="text-[10px] font-mono text-neutral-800 font-bold">
                 Click any node to inspect specs
               </span>
             </div>
@@ -214,28 +209,34 @@ const response = await ai.models.generateContent({
                 onClick={() => setSelectedNode('client')}
                 className={`w-full max-w-md p-3.5 rounded-2xl border transition-all text-left flex items-center justify-between ${
                   selectedNode === 'client'
-                    ? 'bg-emerald-500/15 border-emerald-400 shadow-lg shadow-emerald-900/20 ring-1 ring-emerald-400'
-                    : 'bg-neutral-900/90 border-neutral-800 hover:border-neutral-700'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      selectedNode === 'client' ? 'bg-white/20 text-white' : 'bg-black/[0.04] text-neutral-800 border border-black/[0.06]'
+                    }`}
+                  >
                     APP
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-neutral-100">
+                    <h4 className={`text-xs font-bold ${selectedNode === 'client' ? 'text-white' : 'text-neutral-900'}`}>
                       Mobile & Web Client Applications
                     </h4>
-                    <p className="text-[10px] text-neutral-400">
+                    <p className={`text-[10px] ${selectedNode === 'client' ? 'text-white/70' : 'text-neutral-500'}`}>
                       Flutter (Dart) • React 18 (TypeScript) • Vodozemac Olm
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-400">WSS/HTTPS</span>
+                <span className={`text-[10px] font-mono ${selectedNode === 'client' ? 'text-white/80' : 'text-neutral-600 font-semibold'}`}>
+                  WSS/HTTPS
+                </span>
               </button>
 
               {/* Vertical connector */}
-              <div className="w-0.5 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400" />
+              <div className="w-0.5 h-6 bg-black/20" />
             </div>
 
             {/* Layer 2: Synapse Homeserver */}
@@ -244,29 +245,35 @@ const response = await ai.models.generateContent({
                 onClick={() => setSelectedNode('synapse')}
                 className={`w-full max-w-md p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${
                   selectedNode === 'synapse'
-                    ? 'bg-cyan-500/15 border-cyan-400 shadow-xl shadow-cyan-900/30 ring-1 ring-cyan-400'
-                    : 'bg-neutral-900/90 border-neutral-800 hover:border-neutral-700'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-xs">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      selectedNode === 'synapse' ? 'bg-white/20 text-white' : 'bg-black/[0.04] text-neutral-800 border border-black/[0.06]'
+                    }`}
+                  >
                     <Server className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-neutral-100 flex items-center gap-2">
+                    <h4 className={`text-sm font-bold flex items-center gap-2 ${selectedNode === 'synapse' ? 'text-white' : 'text-neutral-900'}`}>
                       <span>SYNAPSE MATRIX HOMESERVER</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     </h4>
-                    <p className="text-[10px] text-neutral-400">
+                    <p className={`text-[10px] ${selectedNode === 'synapse' ? 'text-white/70' : 'text-neutral-500'}`}>
                       Matrix Core Engine • Event DAGs • Federation • Worker Clusters
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-cyan-400">:8008</span>
+                <span className={`text-[10px] font-mono ${selectedNode === 'synapse' ? 'text-white/80' : 'text-neutral-600 font-semibold'}`}>
+                  :8008
+                </span>
               </button>
 
               {/* Vertical connector split */}
-              <div className="w-0.5 h-6 bg-gradient-to-b from-cyan-400 to-indigo-400" />
+              <div className="w-0.5 h-6 bg-black/20" />
             </div>
 
             {/* Layer 3: Tri-Core Storage & Cache */}
@@ -276,13 +283,17 @@ const response = await ai.models.generateContent({
                 onClick={() => setSelectedNode('postgres')}
                 className={`p-3 rounded-2xl border transition-all text-left flex flex-col items-center justify-center text-center ${
                   selectedNode === 'postgres'
-                    ? 'bg-indigo-500/20 border-indigo-400 ring-1 ring-indigo-400'
-                    : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
-                <Database className="w-5 h-5 text-indigo-400 mb-1" />
-                <span className="text-[11px] font-bold text-neutral-200">PostgreSQL</span>
-                <span className="text-[9px] text-neutral-500 font-mono">Room State DB</span>
+                <Database className={`w-5 h-5 mb-1 ${selectedNode === 'postgres' ? 'text-white' : 'text-neutral-800'}`} />
+                <span className={`text-[11px] font-bold ${selectedNode === 'postgres' ? 'text-white' : 'text-neutral-900'}`}>
+                  PostgreSQL
+                </span>
+                <span className={`text-[9px] font-mono ${selectedNode === 'postgres' ? 'text-white/70' : 'text-neutral-500'}`}>
+                  Room State DB
+                </span>
               </button>
 
               {/* Redis */}
@@ -290,147 +301,150 @@ const response = await ai.models.generateContent({
                 onClick={() => setSelectedNode('redis')}
                 className={`p-3 rounded-2xl border transition-all text-left flex flex-col items-center justify-center text-center ${
                   selectedNode === 'redis'
-                    ? 'bg-rose-500/20 border-rose-400 ring-1 ring-rose-400'
-                    : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
-                <Zap className="w-5 h-5 text-rose-400 mb-1" />
-                <span className="text-[11px] font-bold text-neutral-200">Redis Cache</span>
-                <span className="text-[9px] text-neutral-500 font-mono">Pub/Sub Pool</span>
+                <Zap className={`w-5 h-5 mb-1 ${selectedNode === 'redis' ? 'text-white' : 'text-neutral-800'}`} />
+                <span className={`text-[11px] font-bold ${selectedNode === 'redis' ? 'text-white' : 'text-neutral-900'}`}>
+                  Redis Cache
+                </span>
+                <span className={`text-[9px] font-mono ${selectedNode === 'redis' ? 'text-white/70' : 'text-neutral-500'}`}>
+                  Pub/Sub Pool
+                </span>
               </button>
 
-              {/* MinIO */}
+              {/* Media S3 */}
               <button
-                onClick={() => setSelectedNode('minio')}
+                onClick={() => setSelectedNode('s3')}
                 className={`p-3 rounded-2xl border transition-all text-left flex flex-col items-center justify-center text-center ${
-                  selectedNode === 'minio'
-                    ? 'bg-amber-500/20 border-amber-400 ring-1 ring-amber-400'
-                    : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700'
+                  selectedNode === 's3'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
-                <HardDrive className="w-5 h-5 text-amber-400 mb-1" />
-                <span className="text-[11px] font-bold text-neutral-200">MinIO / S3</span>
-                <span className="text-[9px] text-neutral-500 font-mono">Media Vault</span>
+                <HardDrive className={`w-5 h-5 mb-1 ${selectedNode === 's3' ? 'text-white' : 'text-neutral-800'}`} />
+                <span className={`text-[11px] font-bold ${selectedNode === 's3' ? 'text-white' : 'text-neutral-900'}`}>
+                  Media Store
+                </span>
+                <span className={`text-[9px] font-mono ${selectedNode === 's3' ? 'text-white/70' : 'text-neutral-500'}`}>
+                  MinIO / S3
+                </span>
               </button>
             </div>
 
-            {/* Layer 4: Custom API & AI Layer */}
+            {/* Bottom: Jitsi SFU Node */}
             <div className="flex flex-col items-center pt-2">
-              <div className="w-0.5 h-6 bg-gradient-to-b from-indigo-400 to-emerald-400" />
               <button
-                onClick={() => setSelectedNode('ai_api')}
+                onClick={() => setSelectedNode('jitsi')}
                 className={`w-full max-w-md p-3.5 rounded-2xl border transition-all text-left flex items-center justify-between ${
-                  selectedNode === 'ai_api'
-                    ? 'bg-emerald-500/20 border-emerald-400 shadow-lg ring-1 ring-emerald-400'
-                    : 'bg-neutral-900/90 border-neutral-800 hover:border-neutral-700'
+                  selectedNode === 'jitsi'
+                    ? 'bg-black text-white border-black shadow-md'
+                    : 'bg-white border-black/[0.06] hover:border-black/20 text-neutral-800 shadow-2xs'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <Cpu className="w-5 h-5" />
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      selectedNode === 'jitsi' ? 'bg-white/20 text-white' : 'bg-black/[0.04] text-neutral-800 border border-black/[0.06]'
+                    }`}
+                  >
+                    SFU
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-neutral-100">
-                      WAT Custom API & AI Layer
+                    <h4 className={`text-xs font-bold ${selectedNode === 'jitsi' ? 'text-white' : 'text-neutral-900'}`}>
+                      Jitsi Meet SFU (MatrixRTC WebRTC Focus)
                     </h4>
-                    <p className="text-[10px] text-neutral-400">
-                      Mobile Money (M-Pesa/MoMo) • Catalog • Gemini 3.7 Flash AI
+                    <p className={`text-[10px] ${selectedNode === 'jitsi' ? 'text-white/70' : 'text-neutral-500'}`}>
+                      JVB2 Selective Forwarding • Simulcast • Insertable Streams
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-400">:3000</span>
+                <span className={`text-[10px] font-mono ${selectedNode === 'jitsi' ? 'text-white/80' : 'text-neutral-600 font-semibold'}`}>
+                  :10000 UDP
+                </span>
               </button>
             </div>
           </div>
 
-          {/* Right Column: Node Details & Live Matrix CS-API Event Stream */}
-          <div className="lg:col-span-5 p-6 flex flex-col justify-between overflow-y-auto bg-neutral-950/70">
-            <div>
-              {/* Selected Node Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+          {/* Right Column: Node Inspector & Live Configuration Panel */}
+          <div className="lg:col-span-5 p-6 border-t lg:border-t-0 lg:border-l border-black/[0.06] bg-white flex flex-col justify-between overflow-y-auto space-y-4 custom-scrollbar">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
                 <div>
-                  <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                    {currentDetail.tag}
+                  <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-widest block">
+                    {currentNode.tag}
                   </span>
-                  <h3 className="text-base font-bold text-neutral-100">
-                    {currentDetail.title}
+                  <h3 className="text-base font-black text-neutral-900 mt-0.5">
+                    {currentNode.title}
                   </h3>
                 </div>
-                <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-[11px] font-mono text-neutral-300">
-                  {currentDetail.port}
+                <span className="px-2.5 py-1 rounded-full bg-black/[0.05] text-neutral-800 text-[10px] font-mono font-bold border border-black/[0.08]">
+                  {currentNode.status}
                 </span>
               </div>
 
-              {/* Description */}
-              <p className="text-xs text-neutral-300 mt-3 leading-relaxed">
-                {currentDetail.description}
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                {currentNode.description}
               </p>
 
-              {/* Configuration / Code Snippet */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-mono text-neutral-400 flex items-center gap-1">
-                    <Code2 className="w-3.5 h-3.5" />
-                    <span>Configuration / Runtime Spec</span>
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-2xl bg-black/[0.02] border border-black/[0.06]">
+                  <span className="text-[10px] text-neutral-400 uppercase font-bold block">
+                    Stack / Engine
                   </span>
-                  <button
-                    onClick={copySnippet}
-                    className="text-[10px] text-neutral-400 hover:text-white flex items-center gap-1 font-mono"
-                  >
-                    {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedCode ? 'Copied' : 'Copy'}</span>
-                  </button>
+                  <span className="text-neutral-900 font-semibold mt-0.5 block truncate">
+                    {currentNode.tech}
+                  </span>
                 </div>
-
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-3 font-mono text-[11px] text-neutral-300 overflow-x-auto max-h-44">
-                  <pre>{currentDetail.configSnippet}</pre>
+                <div className="p-3 rounded-2xl bg-black/[0.02] border border-black/[0.06]">
+                  <span className="text-[10px] text-neutral-400 uppercase font-bold block">
+                    Bound Ports
+                  </span>
+                  <span className="text-neutral-900 font-mono font-semibold mt-0.5 block truncate">
+                    {currentNode.port}
+                  </span>
                 </div>
               </div>
 
-              {/* Live Matrix Event Stream Log */}
-              <div className="mt-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-neutral-300 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                    <span>Matrix CS-API Live Event Stream</span>
-                  </span>
+              {/* Code Snippet Box */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-700">
+                    <Code2 className="w-3.5 h-3.5 text-neutral-800" />
+                    <span>Configuration / Implementation</span>
+                  </div>
                   <button
-                    onClick={handleSimulateSync}
-                    className="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1"
+                    onClick={copySnippet}
+                    className="p-1 rounded-lg text-neutral-400 hover:text-black flex items-center gap-1 text-[10px] font-mono font-semibold"
                   >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Trigger Sync</span>
+                    {copiedCode ? (
+                      <>
+                        <Check className="w-3 h-3 text-black" />
+                        <span className="text-black">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
-                <div className="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar">
-                  {matrixLogs.slice(0, 6).map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-2 rounded-xl bg-neutral-900/90 border border-neutral-800 text-[10px] font-mono"
-                    >
-                      <div className="flex items-center justify-between text-neutral-400 mb-0.5">
-                        <span className="text-emerald-400 font-bold">{log.type}</span>
-                        <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                      <div className="text-neutral-300 truncate">{log.endpoint}</div>
-                      <div className="text-neutral-500 italic mt-0.5 truncate">
-                        {log.payloadSummary}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <pre className="p-3.5 rounded-2xl bg-black/[0.02] border border-black/[0.08] text-[11px] font-mono text-neutral-800 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                  {currentNode.configSnippet}
+                </pre>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-neutral-500">
-                Matrix Specification: v1.10 (Megolm E2EE)
-              </span>
+            {/* Footer action */}
+            <div className="pt-4 border-t border-black/[0.06] flex items-center justify-between text-[11px] text-neutral-500 font-mono">
+              <span>Synapse 1.98.0 / Matrix 2.0</span>
               <button
                 onClick={() => setIsBlueprintOpen(false)}
-                className="px-4 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold"
+                className="px-4 py-2 rounded-2xl bg-black hover:bg-neutral-800 text-white font-bold text-xs"
               >
                 Close Inspector
               </button>

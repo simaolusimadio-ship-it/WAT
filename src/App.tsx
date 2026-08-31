@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChatProvider, useChat } from './context/ChatContext';
 import { SidebarNav } from './components/SidebarNav';
+import { WelcomeDashboardView } from './components/WelcomeDashboardView';
 import { ChatList } from './components/ChatList';
 import { ChatArea } from './components/ChatArea';
+import { DiscoverView } from './components/DiscoverView';
+import { AIWorkspaceView } from './components/AIWorkspaceView';
+import { YouProfileView } from './components/YouProfileView';
+import { BusinessSuiteView } from './components/BusinessSuiteView';
 import { CommunitiesView } from './components/CommunitiesView';
 import { CallsView } from './components/CallsView';
-import { BusinessSuiteView } from './components/BusinessSuiteView';
 import { MatrixConferenceView } from './components/MatrixConferenceView';
 import { WebRTCCallModal } from './components/WebRTCCallModal';
 import { StatusViewerModal } from './components/StatusViewerModal';
@@ -16,19 +20,73 @@ import { UserSwitcherModal } from './components/UserSwitcherModal';
 import { NewChatModal } from './components/NewChatModal';
 import { SettingsModal } from './components/SettingsModal';
 import { JitsiDevOpsHubModal } from './components/JitsiDevOpsHubModal';
-import { MessageSquare, Compass, Phone, Store, Layers, CircleDot, Radio } from 'lucide-react';
+import { UniversalSearchModal } from './components/UniversalSearchModal';
+import { CommandCenterModal } from './components/CommandCenterModal';
+import { BusinessSettingsModal } from './components/business/BusinessSettingsModal';
+import { OnboardingModal } from './components/OnboardingModal';
+import { UserProfileModal } from './components/UserProfileModal';
+import { EditProfileModal } from './components/EditProfileModal';
+import { GlassOrbAction } from './components/GlassOrbAction';
+import {
+  Home,
+  MessageSquare,
+  Compass,
+  Store,
+  User,
+} from 'lucide-react';
+import { soundEngine } from './utils/audioSynth';
 
 const AppContent: React.FC = () => {
-  const { activeTab, setActiveTab, totalUnread = 0 } = useChat() as any;
+  const {
+    activeTab,
+    setActiveTab,
+    activeRoomId,
+    setIsUniversalSearchOpen,
+    setIsCommandCenterOpen,
+    isBusinessSettingsOpen,
+    setIsBusinessSettingsOpen,
+    businessSettingsSection,
+    isOnboardingOpen,
+    setIsOnboardingOpen,
+    rooms,
+    viewingUserProfile,
+    setViewingUserProfile,
+    isEditProfileOpen,
+    setIsEditProfileOpen,
+  } = useChat();
+
+  const totalUnread = rooms.reduce((acc, r) => acc + (r.unreadCount || 0), 0);
+
+  // Global Keyboard Shortcuts (⌘K for Search, ⌘J for AI Command Center)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsUniversalSearchOpen((prev) => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        setIsCommandCenterOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setIsUniversalSearchOpen, setIsCommandCenterOpen]);
 
   return (
-    <div className="flex h-screen w-screen bg-neutral-950 text-neutral-100 overflow-hidden font-sans select-none antialiased">
+    <div className="flex h-screen w-screen bg-[#F9FAFB] text-neutral-900 overflow-hidden font-sans select-none antialiased relative">
+      {/* Subtle ambient light gradient background for glass reflections */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-10 left-1/3 w-[30rem] h-[30rem] bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+
       {/* Desktop / Tablet Left Sidebar Navigation */}
       <SidebarNav />
 
       {/* Main Content Area */}
       <main className="flex-1 flex min-w-0 h-full overflow-hidden relative">
-        {/* Chats Tab: Split ChatList + ChatArea */}
+        {/* 0. 🏠 Welcome Dashboard Landing Page */}
+        {activeTab === 'dashboard' && <WelcomeDashboardView />}
+
+        {/* 1. 💬 Chats Tab: Split ChatList + ChatArea */}
         {activeTab === 'chats' && (
           <div className="flex-1 flex h-full min-w-0">
             <ChatList />
@@ -36,103 +94,127 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {/* Stories Tab */}
+        {/* 2. ◉ Discover Tab */}
+        {activeTab === 'discover' && <DiscoverView />}
+
+        {/* 3. ✦ AI Tab */}
+        {activeTab === 'ai' && <AIWorkspaceView />}
+
+        {/* 4. 💼 Business Tab */}
+        {activeTab === 'business' && <BusinessSuiteView />}
+
+        {/* 5. ◎ You & Wallet Tab */}
+        {activeTab === 'you' && <YouProfileView />}
+
+        {/* Auxiliary Views */}
         {activeTab === 'stories' && (
-          <div className="flex-1 flex h-full min-w-0">
+          <div className="flex-1 flex h-full min-w-0 pb-16 md:pb-0">
             <ChatList />
-            <div className="flex-1 flex items-center justify-center bg-neutral-950 p-6 text-center">
-              <div className="max-w-sm">
-                <div className="w-14 h-14 rounded-3xl bg-neutral-900 border border-neutral-800 text-emerald-400 flex items-center justify-center mx-auto mb-3">
-                  <CircleDot className="w-7 h-7" />
-                </div>
-                <h3 className="text-base font-bold text-neutral-100">
-                  Status & Stories
-                </h3>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Click any avatar at the top of the chat list to view 24-hour disappearing photos and video updates.
-                </p>
-              </div>
-            </div>
           </div>
         )}
-
-        {/* Communities / Spaces */}
         {activeTab === 'communities' && <CommunitiesView />}
-
-        {/* Calls Log & Quick Connect */}
         {activeTab === 'calls' && <CallsView />}
-
-        {/* Matrix Conference Hub (matrix-conf-website) */}
         {activeTab === 'conference' && <MatrixConferenceView />}
-
-        {/* Business Suite & Mobile Commerce */}
-        {activeTab === 'business' && <BusinessSuiteView />}
       </main>
 
-      {/* Mobile Bottom Navigation Bar (< 768px) */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-neutral-900/95 backdrop-blur border-t border-neutral-800 py-2 px-4 flex items-center justify-around z-40">
-        <button
-          onClick={() => setActiveTab('chats')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'chats' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <MessageSquare className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Chats</span>
-        </button>
+      {/* Signature WAT Glass Orb Action Button */}
+      <GlassOrbAction />
 
-        <button
-          onClick={() => setActiveTab('stories')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'stories' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <CircleDot className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Status</span>
-        </button>
+      {/* Floating Glass Bottom Navigation Bar (< 768px) */}
+      {(!activeRoomId || activeTab !== 'chats') && (
+        <div className="md:hidden fixed bottom-4 inset-x-4 max-w-sm mx-auto bg-white/85 backdrop-blur-2xl border border-black/[0.08] shadow-[0_16px_40px_rgba(0,0,0,0.10)] py-1.5 px-2 rounded-full flex items-center justify-around z-40">
+          {/* 0. Home */}
+          <button
+            onClick={() => {
+              setActiveTab('dashboard');
+              soundEngine.playChime();
+            }}
+            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-full transition-all duration-200 ${
+              activeTab === 'dashboard'
+                ? 'bg-black text-white shadow-md'
+                : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            {activeTab === 'dashboard' && <span className="text-xs font-semibold">Home</span>}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('conference')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'conference' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <Radio className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Conf</span>
-        </button>
+          {/* 1. Chats */}
+          <button
+            onClick={() => {
+              setActiveTab('chats');
+              soundEngine.playChime();
+            }}
+            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-full transition-all duration-200 ${
+              activeTab === 'chats'
+                ? 'bg-black text-white shadow-md'
+                : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <div className="relative">
+              <MessageSquare className="w-4 h-4" />
+              {totalUnread > 0 && activeTab !== 'chats' && (
+                <span className="absolute -top-1 -right-1.5 px-1 bg-emerald-500 text-white text-[8px] font-black rounded-full min-w-[12px] h-[12px] flex items-center justify-center">
+                  {totalUnread}
+                </span>
+              )}
+            </div>
+            {activeTab === 'chats' && <span className="text-xs font-semibold">Chats</span>}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('communities')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'communities' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <Compass className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Spaces</span>
-        </button>
+          {/* 2. Discover */}
+          <button
+            onClick={() => {
+              setActiveTab('discover');
+              soundEngine.playChime();
+            }}
+            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-full transition-all duration-200 ${
+              activeTab === 'discover'
+                ? 'bg-black text-white shadow-md'
+                : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            {activeTab === 'discover' && <span className="text-xs font-semibold">Discover</span>}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('calls')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'calls' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <Phone className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Calls</span>
-        </button>
+          {/* 3. Business */}
+          <button
+            onClick={() => {
+              setActiveTab('business');
+              soundEngine.playChime();
+            }}
+            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-full transition-all duration-200 ${
+              activeTab === 'business'
+                ? 'bg-black text-white shadow-md'
+                : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            {activeTab === 'business' && <span className="text-xs font-semibold">Business</span>}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('business')}
-          className={`flex flex-col items-center gap-1 ${
-            activeTab === 'business' ? 'text-emerald-400' : 'text-neutral-400'
-          }`}
-        >
-          <Store className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Business</span>
-        </button>
-      </div>
+          {/* 4. You */}
+          <button
+            onClick={() => {
+              setActiveTab('you');
+              soundEngine.playChime();
+            }}
+            className={`flex items-center gap-1.5 py-1.5 px-3 rounded-full transition-all duration-200 ${
+              activeTab === 'you'
+                ? 'bg-black text-white shadow-md'
+                : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            {activeTab === 'you' && <span className="text-xs font-semibold">You</span>}
+          </button>
+        </div>
+      )}
 
       {/* Global Modals & Overlays */}
+      <UniversalSearchModal />
+      <CommandCenterModal />
       <WebRTCCallModal />
       <StatusViewerModal />
       <ArchitectureBlueprintModal />
@@ -141,7 +223,24 @@ const AppContent: React.FC = () => {
       <UserSwitcherModal />
       <NewChatModal />
       <SettingsModal />
+      <BusinessSettingsModal
+        isOpen={isBusinessSettingsOpen}
+        onClose={() => setIsBusinessSettingsOpen(false)}
+        initialSection={businessSettingsSection}
+      />
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+      />
       <JitsiDevOpsHubModal />
+      <UserProfileModal
+        user={viewingUserProfile}
+        onClose={() => setViewingUserProfile(null)}
+      />
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
     </div>
   );
 };

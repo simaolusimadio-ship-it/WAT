@@ -23,7 +23,7 @@ export class MatrixUserVerificationService {
     return {
       accessToken: `uvs_tok_${randomHex}`,
       tokenType: 'Bearer',
-      matrixServerName: userId.split(':')[1] || 'wat.chat',
+      matrixServerName: (userId || '').split(':')[1] || 'wat.chat',
       expiresIn: 3600,
       userId,
       issuedAt: now,
@@ -65,12 +65,13 @@ export class MatrixUserVerificationService {
    * Perform comprehensive UVS Audit for a Matrix user
    */
   public auditUserVerification(
-    userId: string,
+    userId: string = '@user:wat.chat',
     roomId: string = '!room_main:wat.chat'
   ): UVSVerificationResult {
-    const homeserver = userId.split(':')[1] || 'wat.chat';
-    const isBusiness = userId.includes('business') || userId.includes('afroartisan');
-    const isAiBot = userId.includes('ai');
+    const uid = userId || '@user:wat.chat';
+    const homeserver = uid.split(':')[1] || 'wat.chat';
+    const isBusiness = uid.includes('business') || uid.includes('afroartisan');
+    const isAiBot = uid.includes('ai');
 
     // Simulate cross-signing check
     const masterKeyVerified = true;

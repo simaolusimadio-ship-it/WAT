@@ -115,6 +115,10 @@ class SoundEngine {
     osc.stop(now + 0.09);
   }
 
+  public playPop() {
+    this.playReactionPop();
+  }
+
   // Call ringing tone
   private ringOsc1: OscillatorNode | null = null;
   private ringOsc2: OscillatorNode | null = null;
@@ -327,6 +331,35 @@ class SoundEngine {
 
     osc.start(now);
     osc.stop(now + 0.02);
+  }
+
+  // Soft pleasant chime for archiving/unarchiving/pinning
+  public playChime() {
+    if (!this.soundEnabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, now); // C5
+    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.07); // G5
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  // Archive slide sound
+  public playArchiveSound() {
+    this.playChime();
   }
 }
 

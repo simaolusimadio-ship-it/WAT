@@ -24,6 +24,10 @@ import {
   ArrowLeft,
   MessageSquare,
   Layers,
+  Settings,
+  Archive,
+  ArchiveRestore,
+  User as UserIcon,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { MessageItem } from './MessageItem';
@@ -54,6 +58,9 @@ export const ChatArea: React.FC = () => {
     shareProductInChat,
     jitsiServerConfig,
     setActiveRoomId,
+    setIsSettingsOpen,
+    toggleArchiveRoom,
+    openUserProfile,
   } = useChat();
 
   const [inputText, setInputText] = useState('');
@@ -90,15 +97,16 @@ export const ChatArea: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Active Emojibase shortcode autocomplete
-  const activeShortcode = extractActiveShortcode(inputText);
+  const activeShortcode = extractActiveShortcode(inputText || '');
   const shortcodeSuggestions = activeShortcode
-    ? searchEmojibase(activeShortcode.activeQuery).slice(0, 6)
+    ? (searchEmojibase(activeShortcode.activeQuery) || []).slice(0, 6)
     : [];
 
   const handleApplyShortcode = (emojiStr: string) => {
     if (!activeShortcode) return;
+    const current = inputText || '';
     const newText =
-      inputText.slice(0, activeShortcode.startIndex) + emojiStr + ' ';
+      current.slice(0, activeShortcode.startIndex) + emojiStr + ' ';
     setInputText(newText);
     textareaRef.current?.focus();
   };
@@ -139,13 +147,13 @@ export const ChatArea: React.FC = () => {
 
   if (!activeRoom) {
     return (
-      <div className="flex-1 bg-neutral-950 flex flex-col items-center justify-center text-center p-8 select-none">
-        <div className="w-16 h-16 rounded-3xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-emerald-400 mb-4 shadow-xl">
+      <div className="hidden md:flex flex-1 bg-[#FAFAFC] flex-col items-center justify-center text-center p-8 select-none relative overflow-hidden">
+        <div className="w-16 h-16 rounded-3xl bg-white border border-black/[0.08] shadow-[0_12px_32px_rgba(0,0,0,0.06)] flex items-center justify-center text-black mb-4">
           <ShieldCheck className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-neutral-100">Welcome to WAT Messenger</h2>
-        <p className="text-sm text-neutral-400 max-w-sm mt-1">
-          Select a room or contact on the left to start end-to-end encrypted Matrix messaging.
+        <h2 className="text-xl font-bold text-neutral-900">WAT Crystal Messenger</h2>
+        <p className="text-sm text-neutral-500 max-w-sm mt-1.5 leading-relaxed">
+          Select a conversation from your address book to chat with end-to-end encryption.
         </p>
       </div>
     );
@@ -259,61 +267,85 @@ export const ChatArea: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-neutral-950 min-w-0 relative">
+    <div className="flex-1 flex flex-col h-full bg-[#FAFAFC] min-w-0 relative">
       {/* Top Header */}
-      <header className="h-16 px-3 md:px-4 bg-neutral-900/90 backdrop-blur border-b border-neutral-800 flex items-center justify-between z-20 shrink-0 select-none">
+      <header className="h-16 px-3 md:px-4 bg-white/85 backdrop-blur-2xl border-b border-black/[0.06] flex items-center justify-between z-20 shrink-0 select-none shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
         {/* Room Info & Mobile Back Button */}
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <button
             onClick={() => setActiveRoomId('')}
-            className="md:hidden p-1.5 -ml-1 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded-xl"
+            className="md:hidden p-1.5 -ml-1 text-neutral-500 hover:text-black hover:bg-black/[0.04] rounded-xl"
             title="Back to chats"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="relative shrink-0">
-            <img
-              src={activeRoom.avatar}
-              alt={activeRoom.name}
-              className="w-10 h-10 rounded-full object-cover ring-1 ring-neutral-800"
-            />
-            {activeRoom.type === 'direct' && peer && (
-              <span
-                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-neutral-900 ${
-                  peer.isOnline ? 'bg-emerald-500' : 'bg-neutral-600'
-                }`}
+          {/* Clickable peer info to open Profile */}
+          <div
+            id="chat-header-user-info"
+            onClick={() => {
+              if (peer) {
+                openUserProfile(peer);
+              } else if (activeRoom.type === 'direct') {
+                const other = users.find(
+                  (u) => activeRoom.memberIds.includes(u.id) && u.id !== currentUser.id
+                );
+                if (other) openUserProfile(other);
+              }
+            }}
+            className="flex items-center gap-2.5 min-w-0 cursor-pointer p-1.5 -ml-1.5 rounded-2xl hover:bg-black/[0.04] transition-colors group"
+            title="View Profile & Contact Info"
+          >
+            <div className="relative shrink-0">
+              <img
+                src={activeRoom.avatar}
+                alt={activeRoom.name}
+                className="w-10 h-10 rounded-2xl object-cover ring-1 ring-black/10 group-hover:ring-black transition-all shadow-sm"
               />
-            )}
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-neutral-100 truncate">
-                {activeRoom.name}
-              </h2>
-              {activeRoom.isEncrypted && (
-                <button
-                  onClick={() => setIsE2EEOpen(true)}
-                  className="text-emerald-400 hover:text-emerald-300"
-                  title="E2EE Olm/Megolm Encrypted"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                </button>
+              {activeRoom.type === 'direct' && peer && (
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-white ${
+                    peer.isOnline ? 'bg-emerald-500' : 'bg-neutral-300'
+                  }`}
+                />
               )}
             </div>
 
-            {/* Subtitle / typing indicator */}
-            <div className="text-[11px] text-neutral-400 truncate flex items-center gap-1">
-              {typingUsers.length > 0 ? (
-                <span className="text-emerald-400 font-medium animate-pulse">
-                  {typingUsers.join(', ')} is typing...
-                </span>
-              ) : activeRoom.type === 'direct' && peer ? (
-                <span>{peer.isOnline ? 'Active now' : `Last seen ${peer.lastSeen || 'recently'}`}</span>
-              ) : (
-                <span>{activeRoom.memberIds.length} participants</span>
-              )}
+            <div className="flex flex-col min-w-0 text-left">
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-bold text-neutral-900 group-hover:text-black transition-colors truncate">
+                  {activeRoom.name}
+                </h2>
+                {activeRoom.isEncrypted && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsE2EEOpen(true);
+                    }}
+                    className="text-emerald-600 hover:text-emerald-700"
+                    title="E2EE Olm/Megolm Encrypted"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Subtitle / typing indicator */}
+              <div className="text-[11px] text-neutral-500 truncate flex items-center gap-1">
+                {typingUsers.length > 0 ? (
+                  <span className="text-emerald-600 font-medium animate-pulse">
+                    {typingUsers.join(', ')} is typing...
+                  </span>
+                ) : activeRoom.type === 'direct' && peer ? (
+                  <span>
+                    {peer.isOnline
+                      ? 'Active now • Tap for profile'
+                      : `Last seen ${peer.lastSeen || 'recently'} • Tap for profile`}
+                  </span>
+                ) : (
+                  <span>{activeRoom.memberIds.length} participants</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -323,17 +355,17 @@ export const ChatArea: React.FC = () => {
           {/* Summarize Button */}
           <button
             onClick={handleOpenSummarize}
-            className="px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+            className="px-2.5 py-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 border border-black/[0.06] text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
             title="Conversation Summary"
           >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <FileText className="w-3.5 h-3.5 text-neutral-700" />
             <span className="hidden sm:inline">Summary</span>
           </button>
 
           {/* WebRTC Voice Call */}
           <button
             onClick={() => startCall(activeRoom.id, 'voice')}
-            className="p-2 rounded-xl text-neutral-300 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-xl text-neutral-600 hover:text-black hover:bg-black/[0.04] transition-colors"
             title="Start Voice Call"
           >
             <Phone className="w-4 h-4" />
@@ -342,7 +374,7 @@ export const ChatArea: React.FC = () => {
           {/* WebRTC Video Call */}
           <button
             onClick={() => startCall(activeRoom.id, 'video')}
-            className="p-2 rounded-xl text-neutral-300 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-xl text-neutral-600 hover:text-black hover:bg-black/[0.04] transition-colors"
             title="Start Video Call"
           >
             <Video className="w-4 h-4" />
@@ -352,25 +384,44 @@ export const ChatArea: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-              className="p-2 rounded-xl text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors"
+              className="p-2 rounded-xl text-neutral-500 hover:text-black hover:bg-black/[0.04] transition-colors"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
 
             {showOptionsMenu && (
-              <div className="absolute right-0 top-11 bg-neutral-900 border border-neutral-800 rounded-xl p-1 shadow-2xl min-w-[180px] z-30 flex flex-col gap-0.5">
+              <div className="absolute right-0 top-11 bg-white border border-black/[0.08] rounded-2xl p-1.5 shadow-2xl min-w-[190px] z-30 flex flex-col gap-0.5">
+                {(peer || activeRoom.type === 'direct') && (
+                  <button
+                    onClick={() => {
+                      setShowOptionsMenu(false);
+                      if (peer) openUserProfile(peer);
+                      else {
+                        const other = users.find(
+                          (u) => activeRoom.memberIds.includes(u.id) && u.id !== currentUser.id
+                        );
+                        if (other) openUserProfile(other);
+                      }
+                    }}
+                    className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center gap-2"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-neutral-700" />
+                    <span>View User Profile</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => {
                     setShowOptionsMenu(false);
                     setShowDisappearingMenu(true);
                   }}
-                  className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center justify-between"
+                  className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center justify-between"
                 >
                   <span className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <Clock className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Disappearing Messages</span>
                   </span>
-                  <span className="text-[10px] text-neutral-500 font-mono">
+                  <span className="text-[10px] text-neutral-400 font-mono">
                     {activeRoom.disappearingTimer === 0
                       ? 'Off'
                       : activeRoom.disappearingTimer === 86400
@@ -384,9 +435,9 @@ export const ChatArea: React.FC = () => {
                     setShowOptionsMenu(false);
                     setIsE2EEOpen(true);
                   }}
-                  className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center gap-2"
+                  className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center gap-2"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-neutral-700" />
                   <span>Verify Encryption Keys</span>
                 </button>
 
@@ -395,9 +446,9 @@ export const ChatArea: React.FC = () => {
                     setShowOptionsMenu(false);
                     simulatePeerTyping();
                   }}
-                  className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center gap-2"
+                  className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center gap-2"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                  <MessageSquare className="w-3.5 h-3.5 text-neutral-700" />
                   <span>Simulate Typing</span>
                 </button>
 
@@ -406,10 +457,43 @@ export const ChatArea: React.FC = () => {
                     setShowOptionsMenu(false);
                     setIsBlueprintOpen(true);
                   }}
+                  className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center gap-2"
+                >
+                  <Layers className="w-3.5 h-3.5 text-neutral-700" />
+                  <span>Session Blueprint</span>
+                </button>
+
+                <div className="h-px bg-black/[0.06] my-0.5" />
+
+                <button
+                  onClick={() => {
+                    setShowOptionsMenu(false);
+                    toggleArchiveRoom(activeRoom.id);
+                  }}
+                  className="text-left px-3 py-1.5 text-xs text-neutral-800 hover:bg-black/[0.04] rounded-xl flex items-center gap-2"
+                >
+                  {activeRoom.isArchived ? (
+                    <>
+                      <ArchiveRestore className="w-3.5 h-3.5 text-neutral-700" />
+                      <span>Unarchive Chat</span>
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Archive Chat</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowOptionsMenu(false);
+                    setIsSettingsOpen(true);
+                  }}
                   className="text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg flex items-center gap-2"
                 >
-                  <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Session Blueprint</span>
+                  <Settings className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Settings & Preferences</span>
                 </button>
               </div>
             )}
@@ -481,14 +565,14 @@ export const ChatArea: React.FC = () => {
       )}
 
       {/* Messages Scroll Viewport */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
         {/* E2EE Security Intro Banner */}
-        <div className="my-3 mx-auto max-w-md p-3 rounded-2xl bg-neutral-900/60 border border-neutral-800 text-center text-xs text-neutral-400 shadow-sm select-none">
-          <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-semibold mb-1">
-            <ShieldCheck className="w-4 h-4" />
+        <div className="my-3 mx-auto max-w-md p-3.5 rounded-2xl bg-white/80 border border-black/[0.06] text-center text-xs text-neutral-600 shadow-[0_4px_20px_rgba(0,0,0,0.03)] select-none">
+          <div className="flex items-center justify-center gap-1.5 text-neutral-900 font-semibold mb-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Matrix End-to-End Encrypted</span>
           </div>
-          <p className="text-[11px] leading-relaxed text-neutral-400">
+          <p className="text-[11px] leading-relaxed text-neutral-500">
             Messages and calls are encrypted with Olm/Megolm. Only you and recipients hold the cryptographic keys.
           </p>
         </div>
@@ -510,36 +594,36 @@ export const ChatArea: React.FC = () => {
 
         {/* Subtle Matrix 'is typing...' Animated Indicator */}
         {typingUsers.length > 0 && (
-          <div className="flex items-center gap-2 py-1.5 px-3 rounded-2xl bg-neutral-900/80 border border-neutral-800/80 w-fit max-w-[90%] select-none animate-in fade-in slide-in-from-bottom-1 duration-200">
+          <div className="flex items-center gap-2 py-1.5 px-3 rounded-2xl bg-white/90 border border-black/[0.06] shadow-sm w-fit max-w-[90%] select-none animate-in fade-in slide-in-from-bottom-1 duration-200">
             <div className="relative shrink-0">
               {peer?.avatar ? (
                 <img
                   src={peer.avatar}
                   alt={peer.name}
-                  className="w-5 h-5 rounded-full object-cover border border-emerald-400/60"
+                  className="w-5 h-5 rounded-full object-cover border border-black/10"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center text-[9px]">
+                <div className="w-5 h-5 rounded-full bg-black/[0.06] text-neutral-800 font-bold flex items-center justify-center text-[9px]">
                   {typingUsers[0]?.charAt(0) || 'U'}
                 </div>
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-neutral-950 animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
             </div>
 
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-emerald-300 font-medium text-[11px] truncate">
+              <span className="text-neutral-800 font-medium text-[11px] truncate">
                 {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing
               </span>
 
               {/* 3 Bouncing Dots */}
               <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce" />
               </div>
             </div>
 
-            <span className="text-[9px] font-mono text-neutral-500 ml-1">
+            <span className="text-[9px] font-mono text-neutral-400 ml-1">
               m.typing
             </span>
           </div>
@@ -550,7 +634,7 @@ export const ChatArea: React.FC = () => {
 
       {/* Suggestions Chip Bar */}
       {showSmartReplies && smartReplies.length > 0 && (
-        <div className="px-4 py-1.5 bg-neutral-900/60 border-t border-neutral-800/60 flex items-center gap-2 overflow-x-auto no-scrollbar select-none">
+        <div className="px-4 py-1.5 bg-white/80 backdrop-blur-md border-t border-black/[0.06] flex items-center gap-2 overflow-x-auto no-scrollbar select-none">
           <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider shrink-0">
             Suggestions:
           </span>
@@ -561,37 +645,37 @@ export const ChatArea: React.FC = () => {
                 sendMessage({ text: replyText, type: 'text' });
                 setShowSmartReplies(false);
               }}
-              className="px-2.5 py-1 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700/80 whitespace-nowrap transition-transform active:scale-95 shadow-sm"
+              className="px-3 py-1 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 text-xs font-medium border border-black/[0.06] whitespace-nowrap transition-transform active:scale-95 shadow-sm"
             >
               {replyText}
             </button>
           ))}
           <button
             onClick={() => setShowSmartReplies(false)}
-            className="p-1 text-neutral-500 hover:text-neutral-300 ml-auto shrink-0"
+            className="p-1 text-neutral-400 hover:text-black ml-auto shrink-0"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {/* Quoted reply banner in composer */}
       {replyingTo && (
-        <div className="px-4 py-2 bg-neutral-900 border-t border-neutral-800 flex items-center justify-between text-xs">
+        <div className="px-4 py-2 bg-black/[0.03] border-t border-black/[0.06] flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
+            <div className="w-1 h-6 bg-black rounded-full" />
             <div className="min-w-0">
-              <span className="font-semibold text-emerald-400 text-[11px] block">
+              <span className="font-semibold text-neutral-900 text-[11px] block">
                 Replying to {replyingTo.senderName}
               </span>
-              <span className="text-neutral-400 truncate block text-[11px]">
+              <span className="text-neutral-500 truncate block text-[11px]">
                 {replyingTo.text}
               </span>
             </div>
           </div>
           <button
             onClick={() => setReplyingTo(null)}
-            className="p-1 text-neutral-400 hover:text-neutral-200"
+            className="p-1 text-neutral-400 hover:text-black rounded"
           >
             <X className="w-4 h-4" />
           </button>
@@ -599,26 +683,26 @@ export const ChatArea: React.FC = () => {
       )}
 
       {/* Composer Input Bar */}
-      <div className="p-3 bg-neutral-900 border-t border-neutral-800 relative select-none">
+      <div className="p-3 bg-white/85 backdrop-blur-2xl border-t border-black/[0.06] relative select-none shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
         {/* Emojibase Shortcode Autocomplete Dropdown */}
         {shortcodeSuggestions.length > 0 && (
-          <div className="absolute bottom-16 left-16 bg-neutral-900 border border-neutral-700 rounded-2xl p-1.5 shadow-2xl z-40 flex flex-col gap-1 min-w-[200px] animate-scale">
-            <div className="px-2.5 py-1 text-[10px] font-mono text-emerald-400 font-bold border-b border-neutral-800 flex items-center justify-between">
+          <div className="absolute bottom-16 left-16 bg-white border border-black/[0.08] rounded-2xl p-1.5 shadow-2xl z-40 flex flex-col gap-1 min-w-[200px] animate-scale">
+            <div className="px-2.5 py-1 text-[10px] font-mono text-neutral-700 font-bold border-b border-black/[0.06] flex items-center justify-between">
               <span>Matrix Emojibase</span>
-              <span className="text-[9px] text-neutral-500">Tab / Tap to insert</span>
+              <span className="text-[9px] text-neutral-400">Tab / Tap to insert</span>
             </div>
             {shortcodeSuggestions.map((item) => (
               <button
                 key={item.hexcode}
                 type="button"
                 onClick={() => handleApplyShortcode(item.emoji)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-neutral-800 text-left transition-colors"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-black/[0.04] text-left transition-colors"
               >
                 <span className="text-base">{item.emoji}</span>
-                <span className="text-xs font-mono text-neutral-200">
+                <span className="text-xs font-mono text-neutral-800">
                   :{item.shortcodes[0]}:
                 </span>
-                <span className="text-[10px] text-neutral-500 truncate ml-auto">
+                <span className="text-[10px] text-neutral-400 truncate ml-auto">
                   {item.label}
                 </span>
               </button>
@@ -641,7 +725,7 @@ export const ChatArea: React.FC = () => {
 
         {/* Attachment Drawer Popover */}
         {showAttachmentMenu && (
-          <div className="absolute bottom-16 left-4 bg-neutral-900 border border-neutral-700 rounded-2xl p-2 shadow-2xl z-30 grid grid-cols-3 gap-2 w-72 animate-scale">
+          <div className="absolute bottom-16 left-4 bg-white border border-black/[0.08] rounded-3xl p-3 shadow-2xl z-30 grid grid-cols-3 gap-2 w-72 animate-scale">
             {/* Photo / Video */}
             <button
               onClick={() => {
@@ -650,9 +734,9 @@ export const ChatArea: React.FC = () => {
                   'African Tech Summit team demo! 🌍✨'
                 );
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <ImageIcon className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Photo / Media</span>
@@ -673,9 +757,9 @@ export const ChatArea: React.FC = () => {
                   },
                 });
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <FileText className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Document</span>
@@ -684,9 +768,9 @@ export const ChatArea: React.FC = () => {
             {/* Live Location */}
             <button
               onClick={handleSendLocation}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <MapPin className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Location</span>
@@ -698,9 +782,9 @@ export const ChatArea: React.FC = () => {
                 setShowAttachmentMenu(false);
                 setIsInvoiceModalOpen(true);
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <CreditCard className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Invoice Pay</span>
@@ -712,9 +796,9 @@ export const ChatArea: React.FC = () => {
                 setShowAttachmentMenu(false);
                 setIsProductModalOpen(true);
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Catalog Item</span>
@@ -726,9 +810,9 @@ export const ChatArea: React.FC = () => {
                 setShowAttachmentMenu(false);
                 handleStartVoiceRecord();
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <Mic className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Voice Note</span>
@@ -744,9 +828,9 @@ export const ChatArea: React.FC = () => {
                   `📹 Jitsi Video Conference Meeting Link: https://${jitsiServerConfig.serverDomain}/${roomClean}\nJoin securely via web or Jitsi Meet mobile app (E2EE Active).`
                 );
               }}
-              className="flex flex-col items-center p-2.5 rounded-xl hover:bg-neutral-800 text-neutral-200 gap-1 transition-colors"
+              className="flex flex-col items-center p-2.5 rounded-2xl hover:bg-black/[0.04] text-neutral-800 gap-1 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl bg-black/[0.05] text-neutral-900 flex items-center justify-center">
                 <Video className="w-4 h-4" />
               </div>
               <span className="text-[11px] font-medium">Jitsi Meeting</span>
@@ -756,13 +840,13 @@ export const ChatArea: React.FC = () => {
 
         {/* Voice Recording Active UI Bar */}
         {isRecordingVoice ? (
-          <div className="flex items-center justify-between bg-neutral-950 border border-rose-500/50 rounded-2xl px-4 py-2.5 animate-pulse">
+          <div className="flex items-center justify-between bg-white border border-rose-500/50 rounded-2xl px-4 py-2.5 shadow-md">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
-              <span className="text-xs font-mono font-bold text-rose-400">
+              <span className="text-xs font-mono font-bold text-rose-600">
                 Recording: 00:{recordingSeconds < 10 ? `0${recordingSeconds}` : recordingSeconds}
               </span>
-              <span className="text-[11px] text-neutral-400 italic">
+              <span className="text-[11px] text-neutral-500 italic">
                 Live audio capture active...
               </span>
             </div>
@@ -770,14 +854,14 @@ export const ChatArea: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCancelVoiceRecord}
-                className="p-2 rounded-xl text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-colors"
+                className="p-2 rounded-xl text-neutral-500 hover:text-rose-500 hover:bg-black/[0.04] transition-colors"
                 title="Cancel recording"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button
                 onClick={handleSendVoiceRecord}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/20"
+                className="px-3 py-1.5 rounded-xl bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1 shadow-md"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send Voice Note</span>
@@ -789,14 +873,14 @@ export const ChatArea: React.FC = () => {
             {/* Attachment Button */}
             <button
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-              className="p-2.5 rounded-xl text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors"
+              className="p-2.5 rounded-2xl text-neutral-500 hover:text-black hover:bg-black/[0.04] transition-colors"
               title="Add attachment (Photo, Audio, Location, Invoice, Product)"
             >
               <Paperclip className="w-5 h-5" />
             </button>
 
             {/* Input Container */}
-            <div className="flex-1 bg-neutral-950 border border-neutral-800 focus-within:border-emerald-500/50 rounded-2xl px-3 py-1.5 flex items-center gap-2 transition-colors">
+            <div className="flex-1 bg-black/[0.03] focus-within:bg-white border border-black/[0.08] focus-within:border-black/30 rounded-2xl px-3 py-2 flex items-center gap-2 transition-all shadow-inner">
               <textarea
                 ref={textareaRef}
                 value={inputText}
@@ -815,7 +899,7 @@ export const ChatArea: React.FC = () => {
                     : 'Type a message...'
                 }
                 rows={1}
-                className="flex-1 bg-transparent text-xs md:text-sm text-neutral-100 placeholder-neutral-500 resize-none focus:outline-none max-h-28"
+                className="flex-1 bg-transparent text-xs md:text-sm text-neutral-900 placeholder-neutral-400 resize-none focus:outline-none max-h-28"
               />
 
               {/* Tone Formatting Dropdown */}
@@ -824,7 +908,7 @@ export const ChatArea: React.FC = () => {
                   <button
                     onClick={() => handleAIMagicRewrite('professional')}
                     disabled={isRewriting}
-                    className="p-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                    className="p-1 text-neutral-700 hover:text-black hover:bg-black/[0.05] rounded-lg transition-colors"
                     title="Polish Draft"
                   >
                     <FileEdit className="w-4 h-4" />
@@ -838,8 +922,8 @@ export const ChatArea: React.FC = () => {
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className={`p-1.5 rounded-xl transition-colors ${
                   showEmojiPicker
-                    ? 'text-emerald-400 bg-emerald-500/20'
-                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'
+                    ? 'text-black bg-black/[0.08]'
+                    : 'text-neutral-400 hover:text-black hover:bg-black/[0.04]'
                 }`}
                 title="Emotes Picker"
               >
@@ -851,7 +935,7 @@ export const ChatArea: React.FC = () => {
             {inputText.trim().length > 0 ? (
               <button
                 onClick={handleSend}
-                className="p-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold transition-transform active:scale-95 shadow-md shadow-emerald-500/20"
+                className="p-2.5 rounded-2xl bg-black hover:bg-neutral-800 text-white font-bold transition-transform active:scale-95 shadow-md shadow-black/20"
                 title="Send Message"
               >
                 <Send className="w-5 h-5" />
@@ -859,7 +943,7 @@ export const ChatArea: React.FC = () => {
             ) : (
               <button
                 onClick={handleStartVoiceRecord}
-                className="p-2.5 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-emerald-400 transition-transform active:scale-95"
+                className="p-2.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-700 hover:text-black transition-transform active:scale-95"
                 title="Hold to record voice note"
               >
                 <Mic className="w-5 h-5" />

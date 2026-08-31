@@ -4,10 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
-  Sparkles,
-  Eye,
   Plus,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 
@@ -32,30 +29,40 @@ export const StatusViewerModal: React.FC = () => {
 
   const currentStory = stories[selectedStoryIndex] || stories[0];
 
-  // Auto-advancing story timer
+  // Mark current story as viewed and reset progress on story index change
   useEffect(() => {
     if (!isStoryViewerOpen || !currentStory) return;
-
-    markStoryViewed(currentStory.id);
+    if (!currentStory.viewed) {
+      markStoryViewed(currentStory.id);
+    }
     setProgress(0);
+  }, [isStoryViewerOpen, selectedStoryIndex, currentStory?.id]);
+
+  // Story progress timer increment
+  useEffect(() => {
+    if (!isStoryViewerOpen || !currentStory || isPostingStory) return;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
-          if (selectedStoryIndex < stories.length - 1) {
-            setSelectedStoryIndex(selectedStoryIndex + 1);
-            return 0;
-          } else {
-            setIsStoryViewerOpen(false);
-            return 100;
-          }
-        }
+        if (prev >= 100) return 100;
         return prev + 2;
       });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isStoryViewerOpen, selectedStoryIndex]);
+  }, [isStoryViewerOpen, selectedStoryIndex, isPostingStory, currentStory?.id]);
+
+  // Advance to next story when progress reaches 100%
+  useEffect(() => {
+    if (progress < 100 || !isStoryViewerOpen) return;
+
+    if (selectedStoryIndex < stories.length - 1) {
+      setSelectedStoryIndex((prev) => prev + 1);
+      setProgress(0);
+    } else {
+      setIsStoryViewerOpen(false);
+    }
+  }, [progress, isStoryViewerOpen, selectedStoryIndex, stories.length, setSelectedStoryIndex, setIsStoryViewerOpen]);
 
   if (!isStoryViewerOpen || !currentStory) return null;
 
@@ -210,7 +217,7 @@ export const StatusViewerModal: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSendReply();
               }}
-              placeholder={`Reply to ${currentStory.userName.split(' ')[0]}...`}
+              placeholder={`Reply to ${currentStory?.userName ? currentStory.userName.split(' ')[0] : 'story'}...`}
               className="flex-1 bg-neutral-900/90 border border-neutral-700/80 rounded-full px-4 py-2 text-xs text-white placeholder-neutral-400 focus:outline-none focus:border-emerald-400 backdrop-blur"
             />
             <button
