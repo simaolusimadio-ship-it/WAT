@@ -24,6 +24,11 @@ import {
   AuthStatus,
   MfaStatus,
   OnboardingStatus,
+  NetworkMode,
+  QueuedMessage,
+  CheckoutItem,
+  Order,
+  EmailNotification,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -42,6 +47,7 @@ import {
   INITIAL_AI_BRIEF,
 } from '../data/discoverAndWalletData';
 import { soundEngine } from '../utils/audioSynth';
+import { storage } from '../utils/storageEngine';
 import confetti from 'canvas-confetti';
 
 export type MainNavTab =
@@ -276,20 +282,149 @@ interface ChatContextType {
   sendTypingNotification: (isTyping: boolean) => void;
   simulatePeerTyping: (userName?: string, durationMs?: number) => void;
   markRoomAsRead: (roomId: string) => void;
+
+  // Offline Persistence, Outbox & Network Simulation
+  networkMode: NetworkMode;
+  setNetworkMode: (mode: NetworkMode) => void;
+  isOnline: boolean;
+  outboxQueue: QueuedMessage[];
+  flushOutboxQueue: () => void;
+  retryMessage: (messageId: string) => void;
+
+  // Keyboard Shortcuts Modal
+  isKeyboardShortcutsOpen: boolean;
+  setIsKeyboardShortcutsOpen: (open: boolean) => void;
+  toggleKeyboardShortcuts: () => void;
+  clearAllAppData: () => void;
+
+  // WAT Unified Checkout & Payments Infrastructure
+  isCheckoutOpen: boolean;
+  setIsCheckoutOpen: (open: boolean) => void;
+  checkoutItems: CheckoutItem[];
+  setCheckoutItems: React.Dispatch<React.SetStateAction<CheckoutItem[]>>;
+  openCheckout: (items: CheckoutItem[], originatingContext?: any) => void;
+  openProductCheckout: (product: ProductInfo) => void;
+  openInvoiceCheckout: (invoice: InvoiceInfo) => void;
+
+  // Payment Modals & Notifications
+  isPaymentSuccessOpen: boolean;
+  setIsPaymentSuccessOpen: (open: boolean) => void;
+  latestOrder: Order | null;
+  setLatestOrder: (order: Order | null) => void;
+  latestEmailNotification: EmailNotification | null;
+  setLatestEmailNotification: (email: EmailNotification | null) => void;
+  isPaymentDeclinedOpen: boolean;
+  setIsPaymentDeclinedOpen: (open: boolean) => void;
+  declineErrorMessage: string;
+  setDeclineErrorMessage: (msg: string) => void;
+  declineOrderId?: string;
+  isEmailViewerOpen: boolean;
+  setIsEmailViewerOpen: (open: boolean) => void;
+  viewingEmailNotification: EmailNotification | null;
+  openEmailViewer: (email: EmailNotification) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [currentUserId, setCurrentUserId] = useState<string>('user_lusimadio');
-  const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
+  const [users, setUsers] = useState<User[]>(() => storage.get('users', INITIAL_USERS));
+  const [currentUserId, setCurrentUserId] = useState<string>(() => storage.get('current_user_id', 'user_lusimadio'));
+  const [rooms, setRooms] = useState<Room[]>(() => storage.get('rooms', INITIAL_ROOMS));
   const [activeRoomId, setActiveRoomId] = useState<string>('');
-  const [messagesByRoom, setMessagesByRoom] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
-  const [stories, setStories] = useState<StoryStatus[]>(INITIAL_STORIES);
+  const [messagesByRoom, setMessagesByRoom] = useState<Record<string, Message[]>>(() => storage.get('messages', INITIAL_MESSAGES));
+  const [stories, setStories] = useState<StoryStatus[]>(() => storage.get('stories', INITIAL_STORIES));
   const [communities] = useState<CommunitySpace[]>(INITIAL_COMMUNITIES);
-  const [products, setProducts] = useState<ProductInfo[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<ProductInfo[]>(() => storage.get('products', INITIAL_PRODUCTS));
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+
+  // WAT Unified Checkout & Payments Infrastructure State
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
+  const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState(false);
+  const [latestOrder, setLatestOrder] = useState<Order | null>(null);
+  const [latestEmailNotification, setLatestEmailNotification] = useState<EmailNotification | null>(null);
+  const [isPaymentDeclinedOpen, setIsPaymentDeclinedOpen] = useState(false);
+  const [declineErrorMessage, setDeclineErrorMessage] = useState('');
+  const [declineOrderId, setDeclineOrderId] = useState<string | undefined>(undefined);
+  const [isEmailViewerOpen, setIsEmailViewerOpen] = useState(false);
+  const [viewingEmailNotification, setViewingEmailNotification] = useState<EmailNotification | null>(null);
+
+  const openCheckout = (items: CheckoutItem[], originatingContext?: any) => {
+    setCheckoutItems(items);
+    setIsCheckoutOpen(true);
+  };
+
+  const openProductCheckout = (product: ProductInfo) => {
+    const item: CheckoutItem = {
+      id: `item_${product.id}_${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      currency: product.currency || 'ZAR',
+      quantity: 1,
+      image: product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=80',
+      category: product.category,
+      sellerName: 'WAT Verified Merchant',
+    };
+    openCheckout([item], { type: 'product', productId: product.id });
+  };
+
+  const openInvoiceCheckout = (invoice: InvoiceInfo) => {
+    const item: CheckoutItem = {
+      id: `item_inv_${invoice.invoiceId}_${Date.now()}`,
+      productId: invoice.invoiceId,
+      name: `Invoice #${invoice.invoiceId} - ${invoice.description}`,
+      description: invoice.description,
+      price: invoice.amount,
+      currency: invoice.currency || 'ZAR',
+      quantity: 1,
+      image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&auto=format&fit=crop&q=80',
+      category: 'services',
+      sellerName: 'WAT Merchant',
+    };
+    openCheckout([item], { type: 'invoice', invoiceId: invoice.invoiceId });
+  };
+
+  const openEmailViewer = (email: EmailNotification) => {
+    setViewingEmailNotification(email);
+    setIsEmailViewerOpen(true);
+  };
+
+  // Network Simulation & Persistent Outbox Queue
+  const [networkMode, setNetworkMode] = useState<NetworkMode>('online');
+  const [isOnline, setIsOnline] = useState<boolean>(typeof window !== 'undefined' && typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [outboxQueue, setOutboxQueue] = useState<QueuedMessage[]>(() => storage.get('outbox_queue', []));
+  const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState<boolean>(false);
+
+  const toggleKeyboardShortcuts = () => {
+    setIsKeyboardShortcutsOpen((prev) => !prev);
+  };
+
+  // Sync state to local storage engine
+  useEffect(() => { storage.set('users', users); }, [users]);
+  useEffect(() => { storage.set('current_user_id', currentUserId); }, [currentUserId]);
+  useEffect(() => { storage.set('rooms', rooms); }, [rooms]);
+  useEffect(() => { storage.set('messages', messagesByRoom); }, [messagesByRoom]);
+  useEffect(() => { storage.set('stories', stories); }, [stories]);
+  useEffect(() => { storage.set('products', products); }, [products]);
+  useEffect(() => { storage.set('outbox_queue', outboxQueue); }, [outboxQueue]);
+
+  // Online / Offline window listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Business Mode & Wallet
   const [businessMode, setBusinessMode] = useState<'personal' | 'business'>('personal');
@@ -298,9 +433,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     soundEngine.playChime();
   };
 
-  const [walletBalance, setWalletBalance] = useState<number>(24850.0);
-  const [walletCurrency, setWalletCurrency] = useState<WalletCurrency>('ZAR');
-  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(INITIAL_WALLET_TRANSACTIONS);
+  const [walletBalance, setWalletBalance] = useState<number>(() => storage.get('wallet_balance', 24850.0));
+  const [walletCurrency, setWalletCurrency] = useState<WalletCurrency>(() => storage.get('wallet_currency', 'ZAR'));
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(() => storage.get('wallet_transactions', INITIAL_WALLET_TRANSACTIONS));
+
+  useEffect(() => { storage.set('wallet_balance', walletBalance); }, [walletBalance]);
+  useEffect(() => { storage.set('wallet_currency', walletCurrency); }, [walletCurrency]);
+  useEffect(() => { storage.set('wallet_transactions', walletTransactions); }, [walletTransactions]);
 
   const sendMoney = (amount: number, recipientName: string, recipientHandle: string, note?: string) => {
     if (amount <= 0 || amount > walletBalance) return;
@@ -896,7 +1035,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => clearInterval(timer);
   }, [activeCall?.status]);
 
-  // Send message
+  // Send message with Optimistic Outbox Queuing & Latency simulation
   const sendMessage = (params: {
     text: string;
     type?: MessageType;
@@ -910,10 +1049,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }) => {
     if (!activeRoom) return;
 
+    const isCurrentlyOffline = networkMode === 'offline' || !isOnline;
+    const isSlow3G = networkMode === 'slow-3g';
+
     const expiresAt =
       activeRoom.disappearingTimer > 0
         ? Date.now() + activeRoom.disappearingTimer * 1000
         : undefined;
+
+    const initialStatus: MessageStatus = isCurrentlyOffline ? 'failed' : 'sending';
 
     const newMsg: Message = {
       id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
@@ -923,7 +1067,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       senderAvatar: currentUser.avatar,
       text: params.text || '',
       timestamp: Date.now(),
-      status: 'delivered',
+      status: initialStatus,
       type: params.type || 'text',
       mediaUrl: params.mediaUrl,
       mediaInfo: params.mediaInfo,
@@ -953,7 +1097,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logMatrixEvent(
       activeRoom.isEncrypted ? 'm.room.encrypted' : 'm.room.message',
       `/_matrix/client/v3/rooms/${activeRoom.id}/send/m.room.message/${newMsg.id}`,
-      `Sent ${params.type || 'text'} event (${snippet})`
+      `Sent ${params.type || 'text'} event (${snippet}) [status: ${initialStatus}]`
     );
 
     setMessagesByRoom((prev) => ({
@@ -961,7 +1105,40 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       [activeRoom.id]: [...(prev[activeRoom.id] || []), newMsg],
     }));
 
+    // Update room's last message
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.id === activeRoom.id
+          ? {
+              ...r,
+              lastMessage: newMsg,
+              unreadCount: 0,
+            }
+          : r
+      )
+    );
+
+    // If offline, save into persistent outbox queue and halt remote simulation
+    if (isCurrentlyOffline) {
+      setOutboxQueue((prev) => [
+        ...prev,
+        {
+          id: newMsg.id,
+          roomId: activeRoom.id,
+          params,
+          timestamp: Date.now(),
+          retryCount: 0,
+          error: 'Network unreachable (Matrix Offline Mode)',
+        },
+      ]);
+      return;
+    }
+
     // Progressive status update: 'sending' -> 'sent' -> 'delivered' -> 'read'
+    const sentDelay = isSlow3G ? 2200 : 250;
+    const deliveredDelay = isSlow3G ? 4800 : 650;
+    const readDelay = isSlow3G ? 8000 : 2000;
+
     setTimeout(() => {
       setMessagesByRoom((prev) => {
         const roomMsgs = prev[activeRoom.id] || [];
@@ -970,7 +1147,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
         return { ...prev, [activeRoom.id]: updated };
       });
-    }, 250);
+    }, sentDelay);
 
     setTimeout(() => {
       setMessagesByRoom((prev) => {
@@ -980,7 +1157,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
         return { ...prev, [activeRoom.id]: updated };
       });
-    }, 700);
+    }, deliveredDelay);
 
     // If direct chat or AI bot, simulate peer read receipt transition
     if (activeRoom.type === 'direct' || activeRoom.id === 'room_ai_assistant') {
@@ -998,21 +1175,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           `Peer read receipt confirmed for message ${newMsg.id}`,
           'inbound'
         );
-      }, 2200);
+      }, readDelay);
     }
-
-    // Update room's last message
-    setRooms((prev) =>
-      prev.map((r) =>
-        r.id === activeRoom.id
-          ? {
-              ...r,
-              lastMessage: newMsg,
-              unreadCount: 0,
-            }
-          : r
-      )
-    );
 
     // Trigger intelligent automated response if sending to WAT AI Copilot or Business account
     if (activeRoom.id === 'room_ai_assistant' || activeRoom.memberIds.includes('user_ai')) {
@@ -1023,6 +1187,84 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Occasional realistic companion response simulation
       handleSimulatedPeerReply(activeRoom, params.text);
     }
+  };
+
+  // Flush queued messages from outbox
+  const flushOutboxQueue = () => {
+    if (outboxQueue.length === 0) return;
+    const queued = [...outboxQueue];
+    setOutboxQueue([]);
+    soundEngine.playChime();
+
+    queued.forEach((item, index) => {
+      setTimeout(() => {
+        setMessagesByRoom((prev) => {
+          const roomMsgs = prev[item.roomId] || [];
+          const updated = roomMsgs.map((m) =>
+            m.id === item.id ? { ...m, status: 'delivered' as MessageStatus } : m
+          );
+          return { ...prev, [item.roomId]: updated };
+        });
+
+        logMatrixEvent(
+          'm.room.message',
+          `/_matrix/client/v3/rooms/${item.roomId}/send/m.room.message/${item.id}`,
+          `Flushed queued offline message (${item.id}) to Matrix Synapse`
+        );
+      }, (index + 1) * 350);
+    });
+  };
+
+  // Retry individual message
+  const retryMessage = (messageId: string) => {
+    setOutboxQueue((prev) => prev.filter((q) => q.id !== messageId));
+
+    setMessagesByRoom((prev) => {
+      let targetRoomId = '';
+      for (const [rid, msgs] of Object.entries(prev) as [string, Message[]][]) {
+        if (Array.isArray(msgs) && msgs.some((m) => m.id === messageId)) {
+          targetRoomId = rid;
+          break;
+        }
+      }
+      if (!targetRoomId) return prev;
+
+      const roomMsgs = prev[targetRoomId] || [];
+      const updated = roomMsgs.map((m) =>
+        m.id === messageId ? { ...m, status: 'sending' as MessageStatus } : m
+      );
+
+      setTimeout(() => {
+        setMessagesByRoom((p) => {
+          const rms = p[targetRoomId] || [];
+          return {
+            ...p,
+            [targetRoomId]: rms.map((m) =>
+              m.id === messageId ? { ...m, status: 'delivered' as MessageStatus } : m
+            ),
+          };
+        });
+      }, 600);
+
+      return { ...prev, [targetRoomId]: updated };
+    });
+    soundEngine.playMessageSent();
+  };
+
+  // Clear all local app data
+  const clearAllAppData = () => {
+    storage.clearAllAppData();
+    setUsers(INITIAL_USERS);
+    setCurrentUserId('user_lusimadio');
+    setRooms(INITIAL_ROOMS);
+    setMessagesByRoom(INITIAL_MESSAGES);
+    setStories(INITIAL_STORIES);
+    setProducts(INITIAL_PRODUCTS);
+    setWalletBalance(24850.0);
+    setWalletCurrency('ZAR');
+    setWalletTransactions(INITIAL_WALLET_TRANSACTIONS);
+    setOutboxQueue([]);
+    soundEngine.playChime();
   };
 
   // AI Copilot response handler
@@ -2064,6 +2306,38 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sendTypingNotification,
         simulatePeerTyping,
         markRoomAsRead,
+        networkMode,
+        setNetworkMode,
+        isOnline,
+        outboxQueue,
+        flushOutboxQueue,
+        retryMessage,
+        isKeyboardShortcutsOpen,
+        setIsKeyboardShortcutsOpen,
+        toggleKeyboardShortcuts,
+        clearAllAppData,
+        isCheckoutOpen,
+        setIsCheckoutOpen,
+        checkoutItems,
+        setCheckoutItems,
+        openCheckout,
+        openProductCheckout,
+        openInvoiceCheckout,
+        isPaymentSuccessOpen,
+        setIsPaymentSuccessOpen,
+        latestOrder,
+        setLatestOrder,
+        latestEmailNotification,
+        setLatestEmailNotification,
+        isPaymentDeclinedOpen,
+        setIsPaymentDeclinedOpen,
+        declineErrorMessage,
+        setDeclineErrorMessage,
+        declineOrderId,
+        isEmailViewerOpen,
+        setIsEmailViewerOpen,
+        viewingEmailNotification,
+        openEmailViewer,
       }}
     >
       {children}

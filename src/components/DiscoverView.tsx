@@ -30,6 +30,7 @@ export const DiscoverView: React.FC = () => {
     toggleSaveDiscoverItem,
     setActiveRoomId,
     setActiveTab,
+    openCheckout,
   } = useChat();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -266,15 +267,43 @@ export const DiscoverView: React.FC = () => {
                   </div>
 
                   {/* Primary CTA */}
-                  <div className="pt-3 border-t border-black/[0.06] flex items-center justify-between gap-3">
-                    <button
-                      onClick={() => handleAction(item)}
-                      className="flex-1 py-2.5 px-4 rounded-2xl bg-black hover:bg-neutral-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 group/btn shadow-sm active:scale-95"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>{item.actionLabel}</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-                    </button>
+                  <div className="pt-3 border-t border-black/[0.06] flex flex-col gap-2">
+                    {item.category === 'products' && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openCheckout([
+                            {
+                              id: `item_${item.id}`,
+                              productId: item.id,
+                              name: item.title,
+                              description: item.subtitle,
+                              price: 85,
+                              currency: 'ZAR',
+                              quantity: 1,
+                              image: item.image,
+                              category: 'goods',
+                              sellerName: item.authorName || 'WAT Artisan Marketplace',
+                            },
+                          ])
+                        }
+                        className="w-full py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Instant Buy (WAT Checkout)</span>
+                      </button>
+                    )}
+
+                    <div className="flex items-center justify-between gap-3">
+                      <button
+                        onClick={() => handleAction(item)}
+                        className="flex-1 py-2.5 px-4 rounded-2xl bg-black hover:bg-neutral-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 group/btn shadow-sm active:scale-95"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{item.actionLabel}</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

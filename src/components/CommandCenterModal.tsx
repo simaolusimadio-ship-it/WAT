@@ -102,7 +102,7 @@ export const CommandCenterModal: React.FC = () => {
       prompt: 'Generate an executive summary of key action items, customer inquiries, and payment notifications across rooms',
       category: 'Comms',
       execute: (setResult) => {
-        setActiveTab('home');
+        setActiveTab('dashboard');
         setResult('✓ Synthesized 14 conversations: 2 pending quotes for Kigali client, 1 new MoMo payment receipt, 3 unread priority mentions in Matrix.');
       },
     },

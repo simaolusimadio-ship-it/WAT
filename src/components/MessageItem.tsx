@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   Plus,
   Info,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { Message, InvoiceInfo } from '../types';
 import { useChat } from '../context/ChatContext';
@@ -53,6 +55,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     transcribeMessage,
     payInvoice,
     openUserProfile,
+    retryMessage,
+    openInvoiceCheckout,
+    openCheckout,
   } = useChat();
 
   const [showActions, setShowActions] = useState(false);
@@ -434,21 +439,25 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               {message.invoiceInfo.status === 'unpaid' ? (
                 <button
                   type="button"
-                  onClick={() => payInvoice(message.id, 'MTN MoMo')}
+                  onClick={() => {
+                    if (message.invoiceInfo) {
+                      openInvoiceCheckout(message.invoiceInfo);
+                    }
+                  }}
                   className={`w-full mt-1 py-2 px-3 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow transition-transform active:scale-95 ${
                     isOwn
                       ? 'bg-white text-black hover:bg-neutral-100'
                       : 'bg-black text-white hover:bg-neutral-800'
                   }`}
                 >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Pay with MTN MoMo / M-Pesa</span>
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Pay Invoice (WAT Checkout)</span>
                 </button>
               ) : (
                 <div className="mt-1 py-1 px-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>
-                    Paid via {message.invoiceInfo.paymentMethod || 'MoMo'}
+                    Paid via {message.invoiceInfo.paymentMethod || 'WAT Checkout'}
                   </span>
                 </div>
               )}
@@ -485,14 +494,40 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => {
+                      if (message.productInfo) {
+                        openCheckout([
+                          {
+                            id: `item_${message.productInfo.id || message.id}`,
+                            productId: message.productInfo.id || message.id,
+                            name: message.productInfo.name,
+                            description: message.productInfo.description,
+                            price: message.productInfo.price || 0,
+                            currency: message.productInfo.currency || 'ZAR',
+                            quantity: 1,
+                            image: message.productInfo.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=80',
+                            category: 'goods',
+                            sellerName: 'WAT Verified Merchant',
+                          },
+                        ]);
+                      }
+                    }}
+                    className="flex-1 py-1.5 rounded-xl text-[11px] font-bold text-center transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center justify-center gap-1"
+                  >
+                    <ShoppingBag className="w-3 h-3" />
+                    <span>Buy (WAT Checkout)</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => onReply(message)}
-                    className={`flex-1 py-1.5 rounded-xl text-[11px] font-semibold text-center transition-colors ${
+                    className={`py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-center transition-colors ${
                       isOwn
                         ? 'bg-white/20 hover:bg-white/30 text-white'
                         : 'bg-black/[0.05] hover:bg-black/[0.1] text-neutral-900'
                     }`}
                   >
-                    Inquire in Chat
+                    Inquire
                   </button>
                 </div>
               </div>
@@ -585,38 +620,54 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {/* Visual Read Receipt Markers for Outgoing Messages */}
             {isOwn && (
               <div className="relative inline-flex items-center ml-0.5">
-                <button
-                  type="button"
-                  onClick={() => setShowReceiptDetails(!showReceiptDetails)}
-                  className="hover:opacity-80 transition-opacity focus:outline-none"
-                  title={
-                    message.status === 'read'
-                      ? 'Read by recipient (Matrix m.receipt)'
-                      : message.status === 'delivered'
-                      ? 'Delivered to recipient device'
-                      : message.status === 'sent'
-                      ? 'Sent to Synapse homeserver'
-                      : 'Sending message...'
-                  }
-                >
-                  {message.status === 'read' ? (
-                    <span className="flex items-center text-white font-bold">
-                      <CheckCheck className="w-3.5 h-3.5 inline" />
-                    </span>
-                  ) : message.status === 'delivered' ? (
-                    <span className="flex items-center text-white/70">
-                      <CheckCheck className="w-3.5 h-3.5 inline" />
-                    </span>
-                  ) : message.status === 'sent' ? (
-                    <span className="flex items-center text-white/50">
-                      <Check className="w-3.5 h-3.5 inline" />
-                    </span>
-                  ) : (
-                    <span className="flex items-center text-amber-300 animate-pulse">
-                      <Clock className="w-3 h-3 inline" />
-                    </span>
-                  )}
-                </button>
+                {message.status === 'failed' ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      retryMessage(message.id);
+                    }}
+                    className="flex items-center gap-1 text-red-200 hover:text-white bg-red-900/60 hover:bg-red-800/80 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all"
+                    title="Queued in Outbox (Offline). Click to retry"
+                  >
+                    <AlertCircle className="w-3 h-3 text-red-300" />
+                    <span>Retry</span>
+                    <RefreshCw className="w-2.5 h-2.5 ml-0.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowReceiptDetails(!showReceiptDetails)}
+                    className="hover:opacity-80 transition-opacity focus:outline-none"
+                    title={
+                      message.status === 'read'
+                        ? 'Read by recipient (Matrix m.receipt)'
+                        : message.status === 'delivered'
+                        ? 'Delivered to recipient device'
+                        : message.status === 'sent'
+                        ? 'Sent to Synapse homeserver'
+                        : 'Sending message...'
+                    }
+                  >
+                    {message.status === 'read' ? (
+                      <span className="flex items-center text-white font-bold">
+                        <CheckCheck className="w-3.5 h-3.5 inline" />
+                      </span>
+                    ) : message.status === 'delivered' ? (
+                      <span className="flex items-center text-white/70">
+                        <CheckCheck className="w-3.5 h-3.5 inline" />
+                      </span>
+                    ) : message.status === 'sent' ? (
+                      <span className="flex items-center text-white/50">
+                        <Check className="w-3.5 h-3.5 inline" />
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-amber-300 animate-pulse">
+                        <Clock className="w-3 h-3 inline" />
+                      </span>
+                    )}
+                  </button>
+                )}
 
                 {/* Interactive Read Receipt Details Popover */}
                 {showReceiptDetails && (

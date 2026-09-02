@@ -96,8 +96,8 @@ export const StatusViewerModal: React.FC = () => {
       userId: currentUser.id,
       userName: currentUser.name,
       userAvatar: currentUser.avatar,
-      mediaUrl: newStoryMediaUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80',
-      mediaType: 'image',
+      type: 'image',
+      contentUrl: newStoryMediaUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80',
       caption: newStoryCaption || 'Working on WAT matrix node 🚀',
     });
     setIsPostingStory(false);
@@ -173,9 +173,9 @@ export const StatusViewerModal: React.FC = () => {
 
         {/* Story Background / Media */}
         <div className="relative w-full h-full flex items-center justify-center bg-neutral-950">
-          {currentStory.mediaUrl ? (
+          {currentStory.contentUrl || (currentStory as any).mediaUrl ? (
             <img
-              src={currentStory.mediaUrl}
+              src={currentStory.contentUrl || (currentStory as any).mediaUrl}
               alt="Story media"
               className="w-full h-full object-cover"
             />

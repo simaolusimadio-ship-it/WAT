@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Settings,
   Search,
+  Command,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { soundEngine } from '../utils/audioSynth';
@@ -26,6 +27,7 @@ export const SidebarNav: React.FC = () => {
     setIsSettingsOpen,
     setIsUserSwitcherOpen,
     setIsUniversalSearchOpen,
+    setIsKeyboardShortcutsOpen,
     rooms,
   } = useChat();
 
@@ -204,6 +206,15 @@ export const SidebarNav: React.FC = () => {
             className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
           />
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
+        </button>
+
+        {/* Keyboard Shortcuts Cheatsheet */}
+        <button
+          onClick={() => setIsKeyboardShortcutsOpen(true)}
+          title="Keyboard Shortcuts (⌘/Ctrl + /)"
+          className="p-2 text-neutral-400 hover:text-black hover:bg-black/[0.04] rounded-xl transition-colors"
+        >
+          <Command className="w-4 h-4" />
         </button>
 
         {/* Settings */}

@@ -111,7 +111,28 @@ export type MessageType =
   | 'system'
   | 'product_card';
 
-export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+
+export type NetworkMode = 'online' | 'slow-3g' | 'offline';
+
+export interface QueuedMessage {
+  id: string;
+  roomId: string;
+  params: {
+    text: string;
+    type?: MessageType;
+    mediaUrl?: string;
+    mediaInfo?: any;
+    locationInfo?: LocationInfo;
+    invoiceInfo?: InvoiceInfo;
+    productInfo?: ProductInfo;
+    contactInfo?: any;
+    replyTo?: Message;
+  };
+  timestamp: number;
+  retryCount: number;
+  error?: string;
+}
 
 export interface MediaInfo {
   fileName?: string;
@@ -492,5 +513,9 @@ export interface PriorityAIBrief {
   bulletPoints: string[];
   keyActions: string[];
 }
+
+// Re-export all centralized payment types
+export * from './types/payment';
+
 
 

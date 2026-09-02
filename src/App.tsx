@@ -26,6 +26,12 @@ import { BusinessSettingsModal } from './components/business/BusinessSettingsMod
 import { OnboardingModal } from './components/OnboardingModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { EditProfileModal } from './components/EditProfileModal';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { WATCheckoutModal } from './components/checkout/WATCheckoutModal';
+import { WATPaymentSuccessModal } from './components/checkout/WATPaymentSuccessModal';
+import { WATPaymentDeclinedModal } from './components/checkout/WATPaymentDeclinedModal';
+import { WATEmailNotificationViewerModal } from './components/checkout/WATEmailNotificationViewerModal';
+import { NetworkStatusBar } from './components/NetworkStatusBar';
 import { GlassOrbAction } from './components/GlassOrbAction';
 import { AuthAndOnboardingFlow } from './components/auth/AuthAndOnboardingFlow';
 import {
@@ -56,6 +62,30 @@ const AppContent: React.FC = () => {
     setIsEditProfileOpen,
     authStatus,
     onboardingStatus,
+    isKeyboardShortcutsOpen,
+    setIsKeyboardShortcutsOpen,
+    toggleKeyboardShortcuts,
+    toggleBusinessMode,
+    setIsSettingsOpen,
+    setIsNewChatModalOpen,
+    isCheckoutOpen,
+    setIsCheckoutOpen,
+    checkoutItems,
+    isPaymentSuccessOpen,
+    setIsPaymentSuccessOpen,
+    latestOrder,
+    setLatestOrder,
+    latestEmailNotification,
+    setLatestEmailNotification,
+    isPaymentDeclinedOpen,
+    setIsPaymentDeclinedOpen,
+    declineErrorMessage,
+    setDeclineErrorMessage,
+    declineOrderId,
+    isEmailViewerOpen,
+    setIsEmailViewerOpen,
+    viewingEmailNotification,
+    openEmailViewer,
   } = useChat();
 
   const totalUnread = rooms.reduce((acc, r) => acc + (r.unreadCount || 0), 0);
@@ -65,65 +95,119 @@ const AppContent: React.FC = () => {
     return <AuthAndOnboardingFlow />;
   }
 
-  // Global Keyboard Shortcuts (⌘K for Search, ⌘J for AI Command Center)
+  // Comprehensive Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (!isCmdOrCtrl) return;
+
+      const key = e.key.toLowerCase();
+
+      if (key === 'k') {
         e.preventDefault();
         setIsUniversalSearchOpen((prev) => !prev);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+      } else if (key === 'j') {
         e.preventDefault();
         setIsCommandCenterOpen((prev) => !prev);
+      } else if (key === '/' || key === '?') {
+        e.preventDefault();
+        toggleKeyboardShortcuts();
+      } else if (key === 'n' && !e.shiftKey) {
+        e.preventDefault();
+        setIsNewChatModalOpen(true);
+      } else if (key === 'b') {
+        e.preventDefault();
+        toggleBusinessMode();
+      } else if (key === ',' || (key === 's' && e.shiftKey)) {
+        e.preventDefault();
+        setIsSettingsOpen(true);
+      } else if (key === '1') {
+        e.preventDefault();
+        setActiveTab('dashboard');
+        soundEngine.playChime();
+      } else if (key === '2') {
+        e.preventDefault();
+        setActiveTab('chats');
+        soundEngine.playChime();
+      } else if (key === '3') {
+        e.preventDefault();
+        setActiveTab('discover');
+        soundEngine.playChime();
+      } else if (key === '4') {
+        e.preventDefault();
+        setActiveTab('ai');
+        soundEngine.playChime();
+      } else if (key === '5') {
+        e.preventDefault();
+        setActiveTab('business');
+        soundEngine.playChime();
+      } else if (key === '6') {
+        e.preventDefault();
+        setActiveTab('you');
+        soundEngine.playChime();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setIsUniversalSearchOpen, setIsCommandCenterOpen]);
+  }, [
+    setIsUniversalSearchOpen,
+    setIsCommandCenterOpen,
+    toggleKeyboardShortcuts,
+    setIsNewChatModalOpen,
+    toggleBusinessMode,
+    setIsSettingsOpen,
+    setActiveTab,
+  ]);
 
   return (
-    <div className="flex h-screen w-screen bg-[#F9FAFB] text-neutral-900 overflow-hidden font-sans select-none antialiased relative">
-      {/* Subtle ambient light gradient background for glass reflections */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-10 left-1/3 w-[30rem] h-[30rem] bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+    <div className="flex flex-col h-screen w-screen bg-[#F9FAFB] text-neutral-900 overflow-hidden font-sans select-none antialiased relative">
+      {/* Network Connectivity & Outbox Queue Status Bar */}
+      <NetworkStatusBar />
 
-      {/* Desktop / Tablet Left Sidebar Navigation */}
-      <SidebarNav />
+      <div className="flex-1 flex min-w-0 h-full overflow-hidden relative">
+        {/* Subtle ambient light gradient background for glass reflections */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute bottom-10 left-1/3 w-[30rem] h-[30rem] bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex min-w-0 h-full overflow-hidden relative">
-        {/* 0. 🏠 Welcome Dashboard Landing Page */}
-        {activeTab === 'dashboard' && <WelcomeDashboardView />}
+        {/* Desktop / Tablet Left Sidebar Navigation */}
+        <SidebarNav />
 
-        {/* 1. 💬 Chats Tab: Split ChatList + ChatArea */}
-        {activeTab === 'chats' && (
-          <div className="flex-1 flex h-full min-w-0">
-            <ChatList />
-            <ChatArea />
-          </div>
-        )}
+        {/* Main Content Area */}
+        <main className="flex-1 flex min-w-0 h-full overflow-hidden relative">
+          {/* 0. 🏠 Welcome Dashboard Landing Page */}
+          {activeTab === 'dashboard' && <WelcomeDashboardView />}
 
-        {/* 2. ◉ Discover Tab */}
-        {activeTab === 'discover' && <DiscoverView />}
+          {/* 1. 💬 Chats Tab: Split ChatList + ChatArea */}
+          {activeTab === 'chats' && (
+            <div className="flex-1 flex h-full min-w-0">
+              <ChatList />
+              <ChatArea />
+            </div>
+          )}
 
-        {/* 3. ✦ AI Tab */}
-        {activeTab === 'ai' && <AIWorkspaceView />}
+          {/* 2. ◉ Discover Tab */}
+          {activeTab === 'discover' && <DiscoverView />}
 
-        {/* 4. 💼 Business Tab */}
-        {activeTab === 'business' && <BusinessSuiteView />}
+          {/* 3. ✦ AI Tab */}
+          {activeTab === 'ai' && <AIWorkspaceView />}
 
-        {/* 5. ◎ You & Wallet Tab */}
-        {activeTab === 'you' && <YouProfileView />}
+          {/* 4. 💼 Business Tab */}
+          {activeTab === 'business' && <BusinessSuiteView />}
 
-        {/* Auxiliary Views */}
-        {activeTab === 'stories' && (
-          <div className="flex-1 flex h-full min-w-0 pb-16 md:pb-0">
-            <ChatList />
-          </div>
-        )}
-        {activeTab === 'communities' && <CommunitiesView />}
-        {activeTab === 'calls' && <CallsView />}
-        {activeTab === 'conference' && <MatrixConferenceView />}
-      </main>
+          {/* 5. ◎ You & Wallet Tab */}
+          {activeTab === 'you' && <YouProfileView />}
+
+          {/* Auxiliary Views */}
+          {activeTab === 'stories' && (
+            <div className="flex-1 flex h-full min-w-0 pb-16 md:pb-0">
+              <ChatList />
+            </div>
+          )}
+          {activeTab === 'communities' && <CommunitiesView />}
+          {activeTab === 'calls' && <CallsView />}
+          {activeTab === 'conference' && <MatrixConferenceView />}
+        </main>
+      </div>
 
       {/* Signature WAT Glass Orb Action Button */}
       <GlassOrbAction />
@@ -248,6 +332,61 @@ const AppContent: React.FC = () => {
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
+      />
+      <KeyboardShortcutsModal
+        isOpen={isKeyboardShortcutsOpen}
+        onClose={() => setIsKeyboardShortcutsOpen(false)}
+      />
+
+      {/* WAT Unified Checkout & Commerce Settlement Modal */}
+      <WATCheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={checkoutItems}
+        onPaymentSuccess={(order, emailNotification) => {
+          setLatestOrder(order);
+          setLatestEmailNotification(emailNotification);
+          setIsPaymentSuccessOpen(true);
+        }}
+        onPaymentDeclined={(error, orderId, emailNotification) => {
+          setDeclineErrorMessage(error);
+          setLatestEmailNotification(emailNotification || null);
+          setIsPaymentDeclinedOpen(true);
+        }}
+      />
+
+      {/* WAT Premium Payment Successful Modal */}
+      <WATPaymentSuccessModal
+        isOpen={isPaymentSuccessOpen}
+        onClose={() => setIsPaymentSuccessOpen(false)}
+        order={latestOrder}
+        emailNotification={latestEmailNotification}
+        onViewEmail={(email) => openEmailViewer(email)}
+        onContinueShopping={() => {
+          setIsPaymentSuccessOpen(false);
+          setActiveTab('business');
+        }}
+      />
+
+      {/* WAT Payment Declined / Failed Modal */}
+      <WATPaymentDeclinedModal
+        isOpen={isPaymentDeclinedOpen}
+        onClose={() => setIsPaymentDeclinedOpen(false)}
+        errorMessage={declineErrorMessage}
+        orderId={declineOrderId}
+        emailNotification={latestEmailNotification}
+        onViewEmail={(email) => openEmailViewer(email)}
+        onRetryWithDifferentMethod={() => {
+          setIsPaymentDeclinedOpen(false);
+          setIsCheckoutOpen(true);
+        }}
+      />
+
+      {/* WAT Real-time Transactional Email Notification Viewer */}
+      <WATEmailNotificationViewerModal
+        isOpen={isEmailViewerOpen}
+        onClose={() => setIsEmailViewerOpen(false)}
+        email={viewingEmailNotification}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WATUserSettings, WalletTransaction } from '../../types/watUserSettings';
+import { PaymentMethodsSettings } from './PaymentMethodsSettings';
 
 interface Props {
   settings: WATUserSettings;
@@ -50,6 +51,11 @@ export const PaymentsTab: React.FC<Props> = ({ settings, updateSettings, showToa
 
   return (
     <div className="space-y-6 text-neutral-900 bg-white">
+      {/* Direct Bank Cards & Saved Payment Methods Vault */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <PaymentMethodsSettings showToast={showToast} />
+      </section>
+
       {/* Wallet Balance */}
       <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">

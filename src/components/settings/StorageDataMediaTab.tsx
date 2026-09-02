@@ -1,5 +1,7 @@
 import React from 'react';
 import { WATUserSettings } from '../../types/watUserSettings';
+import { useChat } from '../../context/ChatContext';
+import { NetworkMode } from '../../types';
 
 interface Props {
   settings: WATUserSettings;
@@ -8,6 +10,14 @@ interface Props {
 }
 
 export const StorageDataMediaTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+  const {
+    networkMode,
+    setNetworkMode,
+    outboxQueue,
+    flushOutboxQueue,
+    clearAllAppData,
+  } = useChat();
+
   const st = settings.storage;
   const auto = st.mediaAutoDownload;
 
@@ -143,32 +153,107 @@ export const StorageDataMediaTab: React.FC<Props> = ({ settings, updateSettings,
         </div>
       </section>
 
-      {/* Data Optimization */}
+      {/* Data Optimization & Network Simulation */}
       <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
         <h2 className="text-sm sm:text-base font-bold text-neutral-900">
-          Network Usage
+          Network Connectivity & Outbox Queue
         </h2>
 
-        <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex items-center justify-between">
-          <div className="space-y-0.5">
-            <span className="text-xs font-bold text-neutral-900">Use Less Data for Calls</span>
-            <p className="text-[11px] text-neutral-500">
-              Reduces bandwidth consumption during audio and video calls
-            </p>
+        <div className="space-y-3">
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-neutral-900">Network Simulation Mode</div>
+                <div className="text-[11px] text-neutral-500">
+                  Simulate Matrix message behavior across different connectivity environments
+                </div>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-black/[0.05] text-neutral-800 font-semibold uppercase">
+                {networkMode}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {(['online', 'slow-3g', 'offline'] as NetworkMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setNetworkMode(mode);
+                    showToast(`Network mode set to ${mode.toUpperCase()}`);
+                  }}
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                    networkMode === mode
+                      ? 'bg-black text-white border-black shadow-sm'
+                      : 'bg-white border-black/[0.10] text-neutral-700 hover:bg-black/[0.02]'
+                  }`}
+                >
+                  {mode === 'online' ? 'Online (Fast)' : mode === 'slow-3g' ? 'Slow 3G' : 'Offline Mode'}
+                </button>
+              ))}
+            </div>
+
+            {outboxQueue.length > 0 && (
+              <div className="flex items-center justify-between pt-2 border-t border-black/[0.06] mt-2">
+                <span className="text-xs text-amber-700 font-medium">
+                  {outboxQueue.length} message{outboxQueue.length > 1 ? 's' : ''} queued locally in outbox
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    flushOutboxQueue();
+                    showToast('Outbox queue flushed to Matrix homeserver');
+                  }}
+                  className="px-3 py-1 rounded-lg bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors"
+                >
+                  Flush Outbox Now
+                </button>
+              </div>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={handleLowDataToggle}
-            className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-              st.useLessDataForCalls ? 'bg-black' : 'bg-neutral-300'
-            }`}
-          >
-            <div
-              className={`w-3.5 h-3.5 rounded-full bg-white transition-transform ${
-                st.useLessDataForCalls ? 'translate-x-5' : 'translate-x-1'
+
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-neutral-900">Use Less Data for Calls</span>
+              <p className="text-[11px] text-neutral-500">
+                Reduces bandwidth consumption during audio and video calls
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLowDataToggle}
+              className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
+                st.useLessDataForCalls ? 'bg-black' : 'bg-neutral-300'
               }`}
-            />
-          </button>
+            >
+              <div
+                className={`w-3.5 h-3.5 rounded-full bg-white transition-transform ${
+                  st.useLessDataForCalls ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="p-4 rounded-xl bg-red-50/50 border border-red-200/60 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-red-900">Reset Local Storage & Cache</span>
+              <p className="text-[11px] text-red-700">
+                Clear all cached Matrix state, rooms, messages, and restore default state
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Are you sure you want to reset local storage cache?')) {
+                  clearAllAppData();
+                  showToast('App state and storage cache reset');
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors"
+            >
+              Reset Storage
+            </button>
+          </div>
         </div>
       </section>
 

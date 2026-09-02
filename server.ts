@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { createPaymentRouter } from './server/payments';
 
 dotenv.config();
 
@@ -30,6 +31,9 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // WAT Commerce & Payment Infrastructure Router
+  app.use('/api', createPaymentRouter());
 
   // Health check
   app.get('/api/health', (req: Request, res: Response) => {

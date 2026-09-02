@@ -106,7 +106,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ user, onClos
             <div className="space-y-2 text-center sm:text-left flex-1">
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <h2 className="text-lg font-bold text-neutral-900">{user.name}</h2>
-                {user.isVerified && (
+                {(user.verified || (user as any).isVerified) && (
                   <span className="px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 text-[10px] font-semibold">
                     Verified
                   </span>

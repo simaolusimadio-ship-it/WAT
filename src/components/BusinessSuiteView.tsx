@@ -175,7 +175,15 @@ const BUSINESS_SETTINGS_LIST: BusinessSettingCard[] = [
 ];
 
 export const BusinessSuiteView: React.FC = () => {
-  const { products, shareProductInChat, createInvoiceInChat, setActiveTab, openBusinessSettings } = useChat();
+  const {
+    products,
+    shareProductInChat,
+    createInvoiceInChat,
+    setActiveTab,
+    openBusinessSettings,
+    openProductCheckout,
+    openInvoiceCheckout,
+  } = useChat();
 
   const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'invoicing' | 'analytics' | 'settings_hub'>('catalog');
   const [invoiceAmount, setInvoiceAmount] = useState('120');
@@ -390,28 +398,39 @@ export const BusinessSuiteView: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center gap-2">
+                      <div className="mt-4 pt-3 border-t border-black/[0.06] space-y-2">
                         <button
                           type="button"
-                          onClick={() => handleOpenShare(prod)}
-                          className="flex-1 py-2.5 px-3 rounded-2xl bg-black hover:bg-neutral-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95"
-                          title="Share with contacts, groups, or status"
+                          onClick={() => openProductCheckout(prod)}
+                          className="w-full py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95"
                         >
-                          <Share2 className="w-3.5 h-3.5" />
-                          <span>Share Product</span>
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>Buy Now (WAT Checkout)</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            shareProductInChat(prod);
-                            setActiveTab('chats');
-                          }}
-                          className="p-2.5 rounded-2xl border border-black/[0.08] hover:border-black text-neutral-700 hover:text-black hover:bg-black/[0.04] text-xs font-bold transition-all active:scale-95"
-                          title="Send to active conversation"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenShare(prod)}
+                            className="flex-1 py-2 px-3 rounded-2xl bg-neutral-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95"
+                            title="Share with contacts, groups, or status"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Share</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              shareProductInChat(prod);
+                              setActiveTab('chats');
+                            }}
+                            className="p-2 rounded-2xl border border-black/[0.08] hover:border-black text-neutral-700 hover:text-black hover:bg-black/[0.04] text-xs font-bold transition-all active:scale-95"
+                            title="Send to active conversation"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

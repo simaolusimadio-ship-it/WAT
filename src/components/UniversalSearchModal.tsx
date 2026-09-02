@@ -114,19 +114,21 @@ export const UniversalSearchModal: React.FC = () => {
 
     // 3. Businesses & Commerce
     discoverItems.forEach((item) => {
-      if (
-        !q ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.author.toLowerCase().includes(q)
-      ) {
+      const titleMatches = item.title?.toLowerCase().includes(q);
+      const subMatches = item.subtitle?.toLowerCase().includes(q);
+      const descMatches = item.description?.toLowerCase().includes(q);
+      const authorMatches = item.authorName?.toLowerCase().includes(q);
+      const tagMatches = item.tags?.some((t) => t.toLowerCase().includes(q));
+      const locMatches = item.location?.toLowerCase().includes(q);
+
+      if (!q || titleMatches || subMatches || descMatches || authorMatches || tagMatches || locMatches) {
         list.push({
           id: `biz-${item.id}`,
           category: 'businesses',
           title: item.title,
-          subtitle: `${item.author} • ${item.description}`,
-          avatar: item.avatar,
-          metadata: item.price ? `R${item.price}` : 'Artisan Business',
+          subtitle: `${item.authorName || item.subtitle} • ${item.location || item.category}`,
+          avatar: item.image || item.authorAvatar,
+          metadata: item.priceTag || 'Artisan Business',
           action: () => {
             setActiveTab('discover');
             setIsUniversalSearchOpen(false);
