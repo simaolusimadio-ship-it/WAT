@@ -15,9 +15,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const LanguageAppearanceLegalTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const LanguageAppearanceLegalTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const lang = settings.languageRegion;
   const app = settings.appearance;
   const access = settings.accessibility;

@@ -1,15 +1,4 @@
 import React from 'react';
-import {
-  Bell,
-  Volume2,
-  VolumeX,
-  Vibrate,
-  Smartphone,
-  PhoneCall,
-  Sparkles,
-  ShieldCheck,
-  CheckCircle2,
-} from 'lucide-react';
 import { WATUserSettings } from '../../types/watUserSettings';
 import { soundEngine } from '../../utils/audioSynth';
 
@@ -38,7 +27,7 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
         soundEngine.playMessageSent();
       }
     }
-    showToast(`Notification setting updated: ${String(key)}`);
+    showToast(`Updated ${String(key)}`);
   };
 
   const handleSelect = (key: keyof typeof notif, val: string) => {
@@ -54,47 +43,42 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
 
   const handleTestSound = () => {
     soundEngine.playMessageReceived();
-    showToast('Testing notification chime audio...');
+    showToast('Playing test notification audio');
+  };
+
+  const handleSaveTab = () => {
+    showToast('Notification settings saved');
   };
 
   return (
-    <div className="space-y-6 text-neutral-200 animate-fade-in">
-      {/* 7. Conversation Tones & Sound Engine */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-          <div className="flex items-center gap-2">
-            <Volume2 className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-base font-bold text-neutral-100">7. 🔔 Conversation Tones & Sound Engine</h3>
-          </div>
+    <div className="space-y-6 text-neutral-900 bg-white">
+      {/* Sound Settings */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+          <h2 className="text-sm sm:text-base font-bold text-neutral-900">
+            Audio & Sounds
+          </h2>
           <button
             type="button"
             onClick={handleTestSound}
-            className="px-2.5 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-emerald-400 border border-neutral-700 flex items-center gap-1"
+            className="px-3 py-1 rounded-lg border border-black/[0.12] text-xs font-semibold text-neutral-700 hover:bg-black/[0.04]"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Test Sound</span>
+            Test Sound
           </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {notif.conversationTones ? (
-                <Volume2 className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <VolumeX className="w-4 h-4 text-neutral-500" />
-              )}
-              <span className="text-xs font-bold text-neutral-200">In-App Web Audio Synthesizer Tones</span>
-            </div>
-            <p className="text-[11px] text-neutral-400">
-              Play real-time synthesized harmonic chimes for incoming and outgoing messages.
+        <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-neutral-900">Conversation Tones</span>
+            <p className="text-[11px] text-neutral-500">
+              Play sound for incoming and outgoing messages
             </p>
           </div>
           <button
             type="button"
             onClick={() => handleToggle('conversationTones')}
             className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-              notif.conversationTones ? 'bg-emerald-500' : 'bg-neutral-800'
+              notif.conversationTones ? 'bg-black' : 'bg-neutral-300'
             }`}
           >
             <div
@@ -106,33 +90,32 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
         </div>
       </section>
 
-      {/* Message & Group Alerts */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <h3 className="text-sm font-bold text-neutral-100">Messages & Group Notifications</h3>
+      {/* Tones & Alerts */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <h2 className="text-sm sm:text-base font-bold text-neutral-900">
+          Alert Preferences
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Message Notification Sound */}
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-            <label className="text-xs font-bold text-neutral-200">Message Notification Tone</label>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2">
+            <label className="text-xs font-bold text-neutral-900">Message Tone</label>
             <select
               value={notif.messageSound}
               onChange={(e) => handleSelect('messageSound', e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 font-semibold outline-none"
+              className="w-full bg-white border border-black/[0.12] rounded-lg px-3 py-2 text-xs text-neutral-900 font-medium outline-none"
             >
-              <option value="WAT Chime Pulse (Web Audio Synth)">WAT Chime Pulse (Default)</option>
-              <option value="Marimba Drop">Marimba Harmonic Drop</option>
-              <option value="Savanna Kalimba">Savanna Kalimba Ping</option>
+              <option value="WAT Chime Pulse (Web Audio Synth)">Default Chime</option>
+              <option value="Marimba Drop">Soft Tone</option>
               <option value="Silent">Silent</option>
             </select>
           </div>
 
-          {/* Message Vibration */}
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-            <label className="text-xs font-bold text-neutral-200">Message Vibration</label>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2">
+            <label className="text-xs font-bold text-neutral-900">Message Vibration</label>
             <select
               value={notif.messageVibrate}
               onChange={(e) => handleSelect('messageVibrate', e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 font-semibold outline-none"
+              className="w-full bg-white border border-black/[0.12] rounded-lg px-3 py-2 text-xs text-neutral-900 font-medium outline-none"
             >
               <option value="default">Default</option>
               <option value="short">Short</option>
@@ -141,47 +124,43 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
             </select>
           </div>
 
-          {/* Group Notification Tone */}
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-            <label className="text-xs font-bold text-neutral-200">Group Chat Tone</label>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2">
+            <label className="text-xs font-bold text-neutral-900">Group Tone</label>
             <select
               value={notif.groupSound}
               onChange={(e) => handleSelect('groupSound', e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 font-semibold outline-none"
+              className="w-full bg-white border border-black/[0.12] rounded-lg px-3 py-2 text-xs text-neutral-900 font-medium outline-none"
             >
-              <option value="WAT Soft Bell">WAT Soft Bell</option>
+              <option value="WAT Soft Bell">Soft Bell</option>
               <option value="Gentle Echo">Gentle Echo</option>
               <option value="Silent">Silent</option>
             </select>
           </div>
 
-          {/* Call Ringtone */}
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-            <label className="text-xs font-bold text-neutral-200">Call Ringtone</label>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2">
+            <label className="text-xs font-bold text-neutral-900">Call Ringtone</label>
             <select
               value={notif.callRingtone}
               onChange={(e) => handleSelect('callRingtone', e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 font-semibold outline-none"
+              className="w-full bg-white border border-black/[0.12] rounded-lg px-3 py-2 text-xs text-neutral-900 font-medium outline-none"
             >
-              <option value="WAT Harmonic Sine Loop">WAT Harmonic Sine Loop</option>
-              <option value="African Balafon Rhythms">African Balafon Rhythms</option>
-              <option value="Classic Electronic Ring">Classic Electronic Ring</option>
+              <option value="WAT Harmonic Sine Loop">Standard Loop</option>
+              <option value="Classic Electronic Ring">Classic Ring</option>
             </select>
           </div>
         </div>
 
-        {/* Toggles */}
         <div className="space-y-3 pt-2">
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-neutral-200">High Priority Notifications</span>
-              <p className="text-[11px] text-neutral-400">Show previews of notifications at the top of the screen.</p>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-neutral-900">High Priority Alerts</span>
+              <p className="text-[11px] text-neutral-500">Show notification banners at the top</p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle('highPriorityAlerts')}
               className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-                notif.highPriorityAlerts ? 'bg-emerald-500' : 'bg-neutral-800'
+                notif.highPriorityAlerts ? 'bg-black' : 'bg-neutral-300'
               }`}
             >
               <div
@@ -192,16 +171,16 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
             </button>
           </div>
 
-          <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-neutral-200">Preview Message Text on Lock-Screen</span>
-              <p className="text-[11px] text-neutral-400">Hide message snippets for enhanced privacy.</p>
+          <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-neutral-900">Preview Message Text</span>
+              <p className="text-[11px] text-neutral-500">Show message content in previews</p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle('previewText')}
               className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-                notif.previewText ? 'bg-cyan-500' : 'bg-neutral-800'
+                notif.previewText ? 'bg-black' : 'bg-neutral-300'
               }`}
             >
               <div
@@ -213,6 +192,24 @@ export const NotificationsTab: React.FC<Props> = ({ settings, updateSettings, sh
           </div>
         </div>
       </section>
+
+      {/* Save / Cancel Footer */}
+      <div className="flex items-center justify-end gap-2 pt-2 pb-4">
+        <button
+          type="button"
+          onClick={() => showToast('Changes discarded')}
+          className="px-4 py-2 rounded-lg border border-black/[0.15] text-xs font-semibold text-neutral-700 hover:bg-black/[0.04] transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveTab}
+          className="px-5 py-2 rounded-lg bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-colors shadow-sm"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
   );
 };

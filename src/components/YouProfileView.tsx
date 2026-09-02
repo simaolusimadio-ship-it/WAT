@@ -16,8 +16,6 @@ import {
   Check,
   Plus,
   ArrowRight,
-  Building2,
-  Users,
   MessageSquare,
   Phone,
   Share2,
@@ -29,11 +27,18 @@ import {
   Globe,
   Mail,
   MapPin,
+  Briefcase,
+  GraduationCap,
+  LogOut,
+  AlertTriangle,
+  X,
+  Building2,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { soundEngine } from '../utils/audioSynth';
+import { SocialLink, CareerItem, EducationItem } from '../types';
 
-type YouTab = 'profile' | 'wallet' | 'businesses' | 'posts' | 'settings';
+type YouTab = 'wallet' | 'profile' | 'posts' | 'settings';
 
 export const YouProfileView: React.FC = () => {
   const {
@@ -49,14 +54,17 @@ export const YouProfileView: React.FC = () => {
     setIsE2EEOpen,
     setIsUVSModalOpen,
     setIsEditProfileOpen,
-    toggleBusinessMode,
-    businessMode,
     setActiveTab,
     setActiveRoomId,
+    logout,
+    isLogoutConfirmOpen,
+    setIsLogoutConfirmOpen,
+    openBusinessSettings,
   } = useChat();
 
   const [activeSubTab, setActiveSubTab] = useState<YouTab>('wallet');
   const [copiedHandle, setCopiedHandle] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Send Money Modal State
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -95,8 +103,16 @@ export const YouProfileView: React.FC = () => {
     setIsRequestModalOpen(false);
   };
 
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
   return (
-    <div className="flex-1 bg-neutral-100 flex flex-col h-full overflow-y-auto select-none p-4 sm:p-6 md:p-8 pb-20 md:pb-8 text-neutral-900">
+    <div
+      id="you-profile-view"
+      className="flex-1 bg-neutral-100 flex flex-col h-full overflow-y-auto select-none p-4 sm:p-6 md:p-8 pb-20 md:pb-8 text-neutral-900"
+    >
       <div className="max-w-4xl mx-auto w-full space-y-6">
         {/* Profile Card Hero */}
         <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.06)] relative overflow-hidden">
@@ -110,6 +126,7 @@ export const YouProfileView: React.FC = () => {
               />
               <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full" />
               <button
+                id="you-view-avatar-edit-btn"
                 onClick={() => setIsEditProfileOpen(true)}
                 className="absolute inset-0 bg-black/60 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-xs"
                 title="Change Avatar"
@@ -133,7 +150,11 @@ export const YouProfileView: React.FC = () => {
                     className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-black font-mono mt-1 transition-colors font-medium"
                   >
                     <span>{currentUser.handle}</span>
-                    {copiedHandle ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedHandle ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
 
@@ -146,32 +167,48 @@ export const YouProfileView: React.FC = () => {
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>Edit Profile</span>
                   </button>
+
                   <button
+                    id="you-view-settings-btn"
                     onClick={() => setIsSettingsOpen(true)}
                     className="p-2.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-700 hover:text-black transition-colors border border-black/[0.06]"
                     title="Account Settings"
                   >
                     <Settings className="w-4 h-4" />
                   </button>
+
                   <button
+                    id="you-view-qr-btn"
                     onClick={() => setIsQRModalOpen(true)}
                     className="p-2.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-700 hover:text-black transition-colors border border-black/[0.06]"
                     title="Share Identity QR"
                   >
                     <QrCode className="w-4 h-4" />
                   </button>
+
                   <button
+                    id="you-view-switch-user-btn"
                     onClick={() => setIsUserSwitcherOpen(true)}
                     className="px-3.5 py-2 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 border border-black/[0.08] text-xs font-bold transition-all"
                   >
                     Switch User
+                  </button>
+
+                  <button
+                    id="you-view-logout-btn"
+                    onClick={() => setShowLogoutModal(true)}
+                    className="p-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all text-xs font-bold flex items-center gap-1.5"
+                    title="Log Out of Account"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">Log Out</span>
                   </button>
                 </div>
               </div>
 
               {/* Tagline / Headline */}
               <p className="text-sm font-semibold text-neutral-700 mt-2">
-                {currentUser.statusMessage || 'Founder • Entrepreneur • Consultant'}
+                {currentUser.headline || currentUser.statusMessage || 'Founder • Entrepreneur • Consultant'}
               </p>
               <p className="text-xs text-neutral-500 mt-1">
                 {currentUser.location || 'Johannesburg & Cape Town, South Africa'}
@@ -180,6 +217,7 @@ export const YouProfileView: React.FC = () => {
               {/* Quick Action Buttons */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-5">
                 <button
+                  id="you-view-message-action-btn"
                   onClick={() => {
                     setActiveRoomId('room_kwame');
                     setActiveTab('chats');
@@ -191,23 +229,12 @@ export const YouProfileView: React.FC = () => {
                 </button>
 
                 <button
+                  id="you-view-call-action-btn"
                   onClick={() => setActiveTab('calls')}
                   className="px-4 py-2 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 font-bold text-xs flex items-center gap-2 border border-black/[0.06] transition-all"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   Call
-                </button>
-
-                <button
-                  onClick={toggleBusinessMode}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all border ${
-                    businessMode === 'business'
-                      ? 'bg-black text-white border-black shadow-sm'
-                      : 'bg-white/90 text-neutral-700 border-black/[0.08] hover:text-black'
-                  }`}
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                  {businessMode === 'business' ? 'Business Mode: ON' : 'Switch to Business'}
                 </button>
               </div>
             </div>
@@ -218,13 +245,13 @@ export const YouProfileView: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-white/90 p-1.5 rounded-2xl border border-black/[0.08] overflow-x-auto no-scrollbar shadow-sm">
           {[
             { id: 'wallet', label: '💳 WAT Wallet', count: `R${walletBalance.toLocaleString()}` },
-            { id: 'profile', label: 'About & Bio' },
-            { id: 'businesses', label: 'Businesses & Ventures' },
-            { id: 'posts', label: 'Posts & Media' },
-            { id: 'settings', label: 'Security & Settings' },
+            { id: 'profile', label: '👤 About & Bio' },
+            { id: 'posts', label: '✨ Posts & Media' },
+            { id: 'settings', label: '🔒 Security & Settings' },
           ].map((t) => (
             <button
               key={t.id}
+              id={`you-subtab-${t.id}`}
               onClick={() => {
                 setActiveSubTab(t.id as YouTab);
                 soundEngine.playChime();
@@ -258,18 +285,18 @@ export const YouProfileView: React.FC = () => {
             <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.06)] relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 uppercase font-mono tracking-wider">
-                  <Wallet className="w-4 h-4" />
-                  WAT Verified Balance
+                  <Wallet className="w-4 h-4 text-neutral-900" />
+                  <span>Sovereign Mobile Money & Vault</span>
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-xl border border-black/[0.06]">
-                  {(['ZAR', 'USD', 'KES', 'NGN'] as const).map((curr) => (
+                <div className="flex items-center gap-1.5">
+                  {(['ZAR', 'USD', 'NGN', 'EUR', 'GBP'] as const).map((curr) => (
                     <button
                       key={curr}
                       onClick={() => setWalletCurrency(curr)}
-                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono transition-colors ${
+                      className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all ${
                         walletCurrency === curr
-                          ? 'bg-black text-white font-black'
-                          : 'text-neutral-600 hover:text-black'
+                          ? 'bg-black text-white shadow-sm'
+                          : 'bg-black/[0.04] text-neutral-600 hover:text-black'
                       }`}
                     >
                       {curr}
@@ -278,102 +305,126 @@ export const YouProfileView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Large Amount */}
-              <div className="mt-4">
-                <span className="text-3xl sm:text-5xl font-black text-neutral-900 tracking-tight font-mono">
-                  {walletCurrency === 'ZAR' ? 'R' : walletCurrency === 'USD' ? '$' : 'KSh '}
-                  {walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <p className="text-xs text-neutral-500 mt-1">
-                  Instant settlement across Matrix federation & mobile money gateways
+              <div className="my-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-black text-neutral-900 tracking-tight font-mono">
+                    {walletCurrency === 'ZAR' && 'R'}
+                    {walletCurrency === 'USD' && '$'}
+                    {walletCurrency === 'NGN' && '₦'}
+                    {walletCurrency === 'EUR' && '€'}
+                    {walletCurrency === 'GBP' && '£'}
+                    {walletBalance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    +14.8% this month
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1 font-mono">
+                  Multi-rail matrix settlement enabled • 0% network gas fees
                 </p>
               </div>
 
-              {/* Quick 4 Action Buttons */}
-              <div className="grid grid-cols-4 gap-3 mt-6">
+              {/* Action Buttons Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                 <button
+                  id="wallet-send-btn"
                   onClick={() => setIsSendModalOpen(true)}
-                  className="p-3.5 rounded-2xl bg-black hover:bg-neutral-800 text-white font-bold text-xs flex flex-col items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                  className="p-3.5 rounded-2xl bg-black hover:bg-neutral-800 text-white font-bold text-xs flex flex-col items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                 >
-                  <ArrowUpRight className="w-5 h-5" />
-                  <span>Send</span>
+                  <Send className="w-5 h-5 text-neutral-200" />
+                  <span>Send Money</span>
                 </button>
 
                 <button
+                  id="wallet-request-btn"
                   onClick={() => setIsRequestModalOpen(true)}
-                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 font-bold text-xs flex flex-col items-center gap-1.5 border border-black/[0.06] transition-all"
+                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-900 font-bold text-xs flex flex-col items-center justify-center gap-2 border border-black/[0.06] transition-all active:scale-95"
                 >
-                  <ArrowDownLeft className="w-5 h-5 text-neutral-900" />
-                  <span>Receive</span>
+                  <ArrowDownLeft className="w-5 h-5 text-neutral-800" />
+                  <span>Request / Invoice</span>
                 </button>
 
                 <button
+                  id="wallet-qr-btn"
                   onClick={() => setIsQRModalOpen(true)}
-                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 font-bold text-xs flex flex-col items-center gap-1.5 border border-black/[0.06] transition-all"
+                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-900 font-bold text-xs flex flex-col items-center justify-center gap-2 border border-black/[0.06] transition-all active:scale-95"
                 >
-                  <QrCode className="w-5 h-5 text-neutral-900" />
-                  <span>Pay / QR</span>
+                  <QrCode className="w-5 h-5 text-neutral-800" />
+                  <span>Scan / Pay QR</span>
                 </button>
 
                 <button
-                  onClick={() => setIsRequestModalOpen(true)}
-                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-800 font-bold text-xs flex flex-col items-center gap-1.5 border border-black/[0.06] transition-all"
+                  id="wallet-topup-btn"
+                  onClick={() => {
+                    sendMoney(-1000, 'Top-Up', currentUser.handle, 'Card Top-Up');
+                  }}
+                  className="p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-900 font-bold text-xs flex flex-col items-center justify-center gap-2 border border-black/[0.06] transition-all active:scale-95"
                 >
-                  <Repeat className="w-5 h-5 text-neutral-900" />
-                  <span>Request</span>
+                  <Plus className="w-5 h-5 text-neutral-800" />
+                  <span>Top-Up +R1,000</span>
                 </button>
               </div>
             </div>
 
-            {/* Recent Activity List */}
-            <div className="rounded-3xl bg-white/90 border border-black/[0.08] p-6 space-y-4 shadow-sm">
+            {/* Recent Transactions List */}
+            <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 space-y-4 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-neutral-500 uppercase font-mono tracking-wider">
-                  Recent Activity
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-neutral-800" />
+                  Recent Ledger & Settlements
                 </h3>
-                <span className="text-xs text-neutral-400">Live Ledger</span>
+                <span className="text-xs text-neutral-500 font-mono">
+                  {walletTransactions.length} recorded operations
+                </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="divide-y divide-black/[0.06]">
                 {walletTransactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="p-3.5 rounded-2xl bg-black/[0.02] hover:bg-black/[0.04] border border-black/[0.06] flex items-center justify-between gap-3 transition-colors"
+                    className="py-3.5 flex items-center justify-between hover:bg-black/[0.02] px-2 rounded-2xl transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-2xl bg-black/[0.04] text-neutral-800 flex items-center justify-center shrink-0 border border-black/[0.06]">
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                          tx.type === 'incoming'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : tx.type === 'outgoing'
+                            ? 'bg-black/[0.05] text-neutral-900'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}
+                      >
                         {tx.type === 'incoming' ? (
-                          <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
+                          <ArrowDownLeft className="w-5 h-5" />
                         ) : tx.type === 'outgoing' ? (
-                          <ArrowUpRight className="w-5 h-5 text-rose-500" />
+                          <ArrowUpRight className="w-5 h-5" />
                         ) : (
-                          <Repeat className="w-5 h-5 text-neutral-800" />
+                          <Repeat className="w-5 h-5" />
                         )}
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
-                          {tx.counterpartyName}
-                        </h4>
-                        <p className="text-[11px] text-neutral-500 truncate">
-                          {tx.note || tx.category} • {new Date(tx.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </p>
+                      <div>
+                        <p className="text-xs font-bold text-neutral-900">{tx.counterpartyName}</p>
+                        <p className="text-[11px] text-neutral-500">{tx.note || tx.category}</p>
+                        <span className="text-[10px] text-neutral-400 font-mono">
+                          {tx.referenceId}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`text-xs sm:text-sm font-black font-mono ${
-                          tx.type === 'incoming'
-                            ? 'text-emerald-600'
-                            : tx.type === 'outgoing'
-                            ? 'text-rose-500'
-                            : 'text-neutral-900'
+                    <div className="text-right">
+                      <p
+                        className={`text-xs font-bold font-mono ${
+                          tx.type === 'incoming' ? 'text-emerald-600' : 'text-neutral-900'
                         }`}
                       >
-                        {tx.type === 'incoming' ? '+' : tx.type === 'outgoing' ? '-' : ''}
-                        {tx.currency} {tx.amount.toLocaleString()}
-                      </span>
-                      <span className="block text-[10px] text-neutral-400 capitalize">
+                        {tx.type === 'incoming' ? '+' : '-'}
+                        {tx.currency === 'ZAR' ? 'R' : '$'}
+                        {tx.amount.toLocaleString()}
+                      </p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/[0.05] text-neutral-600 font-mono uppercase font-bold">
                         {tx.status}
                       </span>
                     </div>
@@ -384,40 +435,116 @@ export const YouProfileView: React.FC = () => {
           </div>
         )}
 
-        {/* 2. ABOUT & BIO TAB */}
+        {/* 2. PROFILE TAB (ABOUT & BIO) */}
         {activeSubTab === 'profile' && (
-          <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 space-y-5 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <span>About {currentUser.name}</span>
-                {currentUser.verified && (
-                  <CheckCircle2 className="w-4 h-4 text-neutral-900" />
-                )}
-              </h3>
+          <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 sm:p-8 space-y-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900">About & Public Bio</h3>
+                <p className="text-xs text-neutral-500">
+                  Visible to contacts and peers across federated Matrix rooms
+                </p>
+              </div>
               <button
                 onClick={() => setIsEditProfileOpen(true)}
-                className="px-3.5 py-1.5 rounded-2xl bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
+                Edit Profile
               </button>
             </div>
 
-            {/* Bio Content */}
+            {/* Bio text */}
             <div className="p-4 bg-black/[0.02] rounded-2xl border border-black/[0.06]">
-              <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1.5">
-                Bio & Background
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">
+                Executive Biography
               </span>
-              <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">
+              <p className="text-xs sm:text-sm text-neutral-800 leading-relaxed whitespace-pre-wrap">
                 {currentUser.bio ||
-                  'Founder, Technology Entrepreneur & Enterprise Consultant with deep expertise in decentralized communications, Matrix 2.0 protocol infrastructure, pan-African mobile money integration, and AI workflow automation.'}
+                  'Principal Enterprise Architect & Decentralized Communications Advisor with 15+ years experience building fintech protocols, resilient mobile networks, and cross-border trade rails.'}
               </p>
             </div>
 
-            {/* Website & Social Links Grid */}
-            <div className="space-y-3">
-              <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
-                Official Links & Social Channels
+            {/* Position & Industry */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 bg-black/[0.02] rounded-2xl border border-black/[0.06]">
+                <span className="text-[11px] text-neutral-500 font-mono">Current Role</span>
+                <p className="text-xs font-bold text-neutral-900 mt-0.5">
+                  {currentUser.position || 'Principal Architect'}
+                </p>
+              </div>
+              <div className="p-3.5 bg-black/[0.02] rounded-2xl border border-black/[0.06]">
+                <span className="text-[11px] text-neutral-500 font-mono">Company</span>
+                <p className="text-xs font-bold text-neutral-900 mt-0.5">
+                  {currentUser.company || 'Lusimadio Strategic Consulting'}
+                </p>
+              </div>
+              <div className="p-3.5 bg-black/[0.02] rounded-2xl border border-black/[0.06]">
+                <span className="text-[11px] text-neutral-500 font-mono">Industry</span>
+                <p className="text-xs font-bold text-neutral-900 mt-0.5">
+                  {currentUser.industry || 'Fintech & Communications'}
+                </p>
+              </div>
+            </div>
+
+            {/* Career History */}
+            {currentUser.careerHistory && currentUser.careerHistory.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-black/[0.06]">
+                <span className="text-xs font-bold text-neutral-900 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-neutral-700" />
+                  Career Experience
+                </span>
+                <div className="space-y-2">
+                  {currentUser.careerHistory.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-black/[0.02] rounded-2xl border border-black/[0.06]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-neutral-900">{item.role}</p>
+                        <span className="text-[11px] text-neutral-500 font-mono">{item.period}</span>
+                      </div>
+                      <p className="text-xs text-neutral-700 font-medium">{item.company}</p>
+                      {item.description && (
+                        <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Education History */}
+            {currentUser.education && currentUser.education.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-black/[0.06]">
+                <span className="text-xs font-bold text-neutral-900 flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-neutral-700" />
+                  Education & Credentials
+                </span>
+                <div className="space-y-2">
+                  {currentUser.education.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-black/[0.02] rounded-2xl border border-black/[0.06] flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-neutral-900">{item.degree}</p>
+                        <p className="text-xs text-neutral-600">{item.school}</p>
+                      </div>
+                      <span className="text-[11px] text-neutral-500 font-mono">{item.year}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Official Website & Links */}
+            <div className="space-y-3 pt-2 border-t border-black/[0.06]">
+              <span className="text-xs font-bold text-neutral-900 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-neutral-700" />
+                Official Links & Web Presence
               </span>
 
               {currentUser.website && (
@@ -475,43 +602,7 @@ export const YouProfileView: React.FC = () => {
           </div>
         )}
 
-        {/* 3. BUSINESSES TAB */}
-        {activeSubTab === 'businesses' && (
-          <div className="space-y-4">
-            <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 space-y-4 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-neutral-800" />
-                  Your Active Businesses & Ventures
-                </h3>
-                <button
-                  onClick={() => setActiveTab('business')}
-                  className="text-xs text-neutral-800 hover:text-black font-bold"
-                >
-                  Open Business Suite →
-                </button>
-              </div>
-
-              <div className="p-4 bg-black/[0.02] border border-black/[0.06] rounded-2xl flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-neutral-900">Lusimadio Strategic Consulting</h4>
-                  <p className="text-xs text-neutral-500 mt-0.5">Enterprise architecture, fintech strategy & protocol design</p>
-                  <span className="inline-block mt-2 px-2.5 py-0.5 bg-black/[0.05] text-neutral-800 border border-black/[0.08] rounded-xl text-[10px] font-bold">
-                    R127,450 Monthly Revenue • 17 Orders
-                  </span>
-                </div>
-                <button
-                  onClick={() => setActiveTab('business')}
-                  className="px-3.5 py-2 rounded-2xl bg-black text-white font-bold text-xs hover:bg-neutral-800 shadow-sm"
-                >
-                  Manage CRM
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 4. POSTS TAB */}
+        {/* 3. POSTS TAB */}
         {activeSubTab === 'posts' && (
           <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 text-center space-y-3 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
             <Sparkles className="w-8 h-8 text-neutral-800 mx-auto" />
@@ -528,7 +619,7 @@ export const YouProfileView: React.FC = () => {
           </div>
         )}
 
-        {/* 5. SETTINGS TAB */}
+        {/* 4. SETTINGS TAB */}
         {activeSubTab === 'settings' && (
           <div className="rounded-3xl bg-white/90 backdrop-blur-2xl border border-black/[0.08] p-6 space-y-4 shadow-[0_16px_40px_rgba(0,0,0,0.06)]">
             <h3 className="text-base font-bold text-neutral-900">Security & App Preferences</h3>
@@ -562,6 +653,23 @@ export const YouProfileView: React.FC = () => {
               </button>
 
               <button
+                id="you-settings-business-btn"
+                onClick={() => openBusinessSettings('profile_account')}
+                className="p-3.5 bg-black/[0.02] hover:bg-black/[0.04] border border-black/[0.06] rounded-2xl flex items-center justify-between text-left col-span-full transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-5 h-5 text-neutral-800" />
+                  <div>
+                    <p className="text-xs font-bold text-neutral-900">WAT Business Settings</p>
+                    <p className="text-[11px] text-neutral-500">
+                      African commerce, M-Pesa / MoMo gateways, team roles & AI bot configuration
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-neutral-400" />
+              </button>
+
+              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-3.5 bg-black/[0.02] hover:bg-black/[0.04] border border-black/[0.06] rounded-2xl flex items-center justify-between text-left col-span-full transition-colors"
               >
@@ -569,15 +677,82 @@ export const YouProfileView: React.FC = () => {
                   <Settings className="w-5 h-5 text-neutral-800" />
                   <div>
                     <p className="text-xs font-bold text-neutral-900">Full Application Settings</p>
-                    <p className="text-[11px] text-neutral-500">Notifications, chats, privacy, devices & storage</p>
+                    <p className="text-[11px] text-neutral-500">
+                      Notifications, chats, privacy, devices & storage
+                    </p>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-neutral-400" />
               </button>
             </div>
+
+            {/* Dedicated Logout Section */}
+            <div className="pt-4 border-t border-black/[0.06]">
+              <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3 text-center sm:text-left">
+                  <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <LogOut className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-neutral-900">Account Session</p>
+                    <p className="text-[11px] text-neutral-600">
+                      End active session and unmount cryptographic keys from this browser.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  id="settings-logout-btn"
+                  onClick={() => setShowLogoutModal(true)}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-all whitespace-nowrap active:scale-95"
+                >
+                  Log Out
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Log Out Confirmation Dialog */}
+      {showLogoutModal && (
+        <div
+          id="logout-confirmation-overlay"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in"
+        >
+          <div
+            id="logout-confirmation-modal"
+            className="w-full max-w-sm bg-white border border-black/[0.08] rounded-3xl p-6 shadow-2xl space-y-4 animate-scale text-center"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-neutral-900">Log Out of WAT?</h3>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Are you sure you want to log out? Your sovereign keys and active session on this device will be securely closed.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                id="logout-cancel-btn"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 rounded-2xl text-xs font-bold text-neutral-700 hover:bg-black/[0.04] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                id="logout-confirm-btn"
+                onClick={handleConfirmLogout}
+                className="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-all active:scale-95"
+              >
+                Confirm Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Send Money Modal */}
       {isSendModalOpen && (
@@ -588,7 +763,9 @@ export const YouProfileView: React.FC = () => {
               Send Money via WAT Wallet
             </h3>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Recipient Name</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Recipient Name
+              </label>
               <input
                 type="text"
                 value={sendRecipient}
@@ -597,7 +774,9 @@ export const YouProfileView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Matrix Handle</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Matrix Handle
+              </label>
               <input
                 type="text"
                 value={sendHandle}
@@ -606,7 +785,9 @@ export const YouProfileView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Amount ({walletCurrency})</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Amount ({walletCurrency})
+              </label>
               <input
                 type="number"
                 value={sendAmount}
@@ -615,7 +796,9 @@ export const YouProfileView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Note (Optional)</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Note (Optional)
+              </label>
               <input
                 type="text"
                 value={sendNote}
@@ -650,7 +833,9 @@ export const YouProfileView: React.FC = () => {
               Request Money / Send Payment Link
             </h3>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Payer Name</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Payer Name
+              </label>
               <input
                 type="text"
                 value={requestPayer}
@@ -659,7 +844,9 @@ export const YouProfileView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Amount ({walletCurrency})</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Amount ({walletCurrency})
+              </label>
               <input
                 type="number"
                 value={requestAmount}
@@ -668,7 +855,9 @@ export const YouProfileView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">Reason / Invoice Note</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                Reason / Invoice Note
+              </label>
               <input
                 type="text"
                 value={requestNote}
@@ -698,19 +887,17 @@ export const YouProfileView: React.FC = () => {
       {isQRModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
           <div className="w-full max-w-sm bg-white border border-black/[0.08] rounded-3xl p-6 shadow-2xl space-y-4 text-center animate-scale">
-            <h3 className="text-base font-bold text-neutral-900">
-              WAT QR Pay & Connect
-            </h3>
+            <h3 className="text-base font-bold text-neutral-900">WAT QR Pay & Connect</h3>
             <div className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl flex items-center justify-center border border-black/[0.08] shadow-sm">
               <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=wat://pay/lusimadio:wat.chat"
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=wat://pay/${encodeURIComponent(
+                  currentUser.handle
+                )}`}
                 alt="QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-xs font-mono text-neutral-900 font-bold">
-              @lusimadio:wat.chat
-            </p>
+            <p className="text-xs font-mono text-neutral-900 font-bold">{currentUser.handle}</p>
             <p className="text-[11px] text-neutral-500">
               Scan this QR to initiate instant zero-fee peer payments or verified Matrix room invitations.
             </p>

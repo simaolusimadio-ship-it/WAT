@@ -23,9 +23,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const LabelsAndCustomersTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const LabelsAndCustomersTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const labels = settings.labels;
   const customers = settings.customers;
 

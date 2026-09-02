@@ -40,7 +40,7 @@ export const SidebarNav: React.FC = () => {
             setActiveTab('dashboard');
             soundEngine.playChime();
           }}
-          title="WAT Unified Home Dashboard"
+          title="Home Dashboard"
           className="relative group p-2 rounded-2xl bg-black text-white shadow-md hover:scale-105 active:scale-95 transition-all"
         >
           <div className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black tracking-tighter text-base">
@@ -53,7 +53,7 @@ export const SidebarNav: React.FC = () => {
         <button
           onClick={() => setIsUniversalSearchOpen(true)}
           className="p-2 text-neutral-500 hover:text-black hover:bg-black/[0.04] rounded-xl transition-all"
-          title="Universal Search (⌘K)"
+          title="Search"
         >
           <Search className="w-4 h-4" />
         </button>
@@ -61,7 +61,7 @@ export const SidebarNav: React.FC = () => {
 
       {/* Primary System Navigation */}
       <nav className="flex flex-col items-center gap-2.5 my-auto">
-        {/* 0. 🏠 Home / Welcome Dashboard */}
+        {/* 0. Home Dashboard */}
         <button
           onClick={() => {
             setActiveTab('dashboard');
@@ -72,12 +72,12 @@ export const SidebarNav: React.FC = () => {
               ? 'bg-black text-white shadow-lg shadow-black/20'
               : 'text-neutral-500 hover:text-black hover:bg-black/[0.04]'
           }`}
-          title="🏠 Home Dashboard"
+          title="Home"
         >
           <Home className="w-5 h-5 md:w-6 md:h-6" />
         </button>
 
-        {/* 1. 💬 Chats Tab */}
+        {/* 1. Chats Tab */}
         <button
           onClick={() => {
             setActiveTab('chats');
@@ -88,7 +88,7 @@ export const SidebarNav: React.FC = () => {
               ? 'bg-black text-white shadow-lg shadow-black/20'
               : 'text-neutral-500 hover:text-black hover:bg-black/[0.04]'
           }`}
-          title="💬 Chats"
+          title="Chats"
         >
           <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
           {totalUnread > 0 && (
@@ -98,7 +98,7 @@ export const SidebarNav: React.FC = () => {
           )}
         </button>
 
-        {/* 2. ◉ Discover Tab */}
+        {/* 2. Discover Tab */}
         <button
           onClick={() => {
             setActiveTab('discover');
@@ -109,13 +109,13 @@ export const SidebarNav: React.FC = () => {
               ? 'bg-black text-white shadow-lg shadow-black/20'
               : 'text-neutral-500 hover:text-black hover:bg-black/[0.04]'
           }`}
-          title="◉ Discover & Channels"
+          title="Discover"
         >
           <Compass className="w-5 h-5 md:w-6 md:h-6" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-white" />
         </button>
 
-        {/* 3. 💼 Business Tab */}
+        {/* 3. Business Tab */}
         <button
           onClick={() => {
             setActiveTab('business');
@@ -126,12 +126,12 @@ export const SidebarNav: React.FC = () => {
               ? 'bg-black text-white shadow-lg shadow-black/20'
               : 'text-neutral-500 hover:text-black hover:bg-black/[0.04]'
           }`}
-          title="💼 Business Suite"
+          title="Business"
         >
           <Store className="w-5 h-5 md:w-6 md:h-6" />
         </button>
 
-        {/* 4. ◎ You Tab */}
+        {/* 4. You Tab */}
         <button
           onClick={() => {
             setActiveTab('you');
@@ -142,7 +142,7 @@ export const SidebarNav: React.FC = () => {
               ? 'bg-black text-white shadow-lg shadow-black/20'
               : 'text-neutral-500 hover:text-black hover:bg-black/[0.04]'
           }`}
-          title="◎ You & Wallet"
+          title="Profile"
         >
           <User className="w-5 h-5 md:w-6 md:h-6" />
         </button>

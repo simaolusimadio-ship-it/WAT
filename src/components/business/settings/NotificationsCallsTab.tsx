@@ -14,9 +14,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const NotificationsCallsTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const NotificationsCallsTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const notifs = settings.notifications;
   const calls = settings.calls;
 

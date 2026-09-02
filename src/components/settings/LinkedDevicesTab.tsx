@@ -1,16 +1,4 @@
 import React, { useState } from 'react';
-import {
-  Laptop,
-  Smartphone,
-  Tablet,
-  QrCode,
-  LogOut,
-  Shield,
-  Clock,
-  MapPin,
-  CheckCircle2,
-  X,
-} from 'lucide-react';
 import { WATUserSettings, LinkedDeviceSession } from '../../types/watUserSettings';
 
 interface Props {
@@ -28,7 +16,7 @@ export const LinkedDevicesTab: React.FC<Props> = ({ settings, updateSettings, sh
       ...prev,
       linkedDevices: prev.linkedDevices.filter((d) => d.id !== id),
     }));
-    showToast('Device logged out remotely.');
+    showToast('Device logged out');
   };
 
   const handleSimulateNewLink = () => {
@@ -48,114 +36,89 @@ export const LinkedDevicesTab: React.FC<Props> = ({ settings, updateSettings, sh
       linkedDevices: [...prev.linkedDevices, newSession],
     }));
     setShowQRModal(false);
-    showToast('New device successfully paired via E2EE QR Code!');
+    showToast('New device paired');
+  };
+
+  const handleSaveTab = () => {
+    showToast('Linked devices settings saved');
   };
 
   return (
-    <div className="space-y-6 text-neutral-200 animate-fade-in">
-      {/* 14. Linked Devices Hub */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <Laptop className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-base font-bold text-neutral-100">14. 💻 Linked Devices & Multi-Client</h3>
-            </div>
-            <p className="text-xs text-neutral-400 mt-1">
-              Use WAT on Web, Desktop, and tablets without keeping your phone online.
-            </p>
-          </div>
-
+    <div className="space-y-6 text-neutral-900 bg-white">
+      {/* Linked Devices */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+          <h2 className="text-sm sm:text-base font-bold text-neutral-900">
+            Active Devices ({devices.length})
+          </h2>
           <button
             type="button"
             onClick={() => setShowQRModal(true)}
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all"
+            className="px-3.5 py-1.5 rounded-lg bg-black text-white font-semibold text-xs hover:bg-neutral-800 transition-colors"
           >
-            <QrCode className="w-4 h-4" />
-            <span>Link a Device</span>
+            Link a Device
           </button>
         </div>
 
         {/* QR Linking Modal */}
         {showQRModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-neutral-100">Scan QR Code to Link</h4>
-                <button
-                  onClick={() => setShowQRModal(false)}
-                  className="p-1 rounded-lg text-neutral-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="p-4 bg-white rounded-2xl inline-block shadow-inner">
-                {/* SVG QR Code Simulation */}
-                <div className="w-48 h-48 bg-neutral-950 rounded-xl p-3 flex flex-col items-center justify-center text-emerald-400">
-                  <QrCode className="w-36 h-36" />
-                  <span className="text-[10px] font-mono mt-1 text-neutral-400">WAT_MATRIX_PAIR_KEY</span>
-                </div>
-              </div>
-
-              <p className="text-xs text-neutral-400">
-                Point your WAT camera at <span className="text-neutral-200 font-mono">web.wat.chat</span> to authenticate with end-to-end encryption.
-              </p>
-
+          <div className="p-4 rounded-xl bg-white border border-black/[0.12] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-neutral-900">Link New Device</h3>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="text-xs text-neutral-500 hover:text-black font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Point your camera at the QR code on your second device to link.
+            </p>
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={handleSimulateNewLink}
-                className="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs"
+                className="px-4 py-2 rounded-lg bg-black text-white font-semibold text-xs hover:bg-neutral-800"
               >
-                Simulate Successful QR Scan
+                Simulate Device Pairing
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="px-4 py-2 rounded-lg border border-black/[0.15] text-neutral-700 font-semibold text-xs"
+              >
+                Cancel
               </button>
             </div>
           </div>
         )}
 
-        {/* Active Sessions List */}
-        <div className="space-y-3 pt-2">
-          <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-            Active Device Sessions ({devices.length})
-          </div>
-
+        <div className="space-y-3">
           {devices.map((dev) => (
             <div
               key={dev.id}
-              className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              className={`p-4 rounded-xl border transition-colors flex items-center justify-between ${
+                dev.isCurrent
+                  ? 'bg-neutral-50 border-black/[0.15]'
+                  : 'bg-white border-black/[0.08]'
+              }`}
             >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-10 h-10 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-emerald-400 shrink-0">
-                  {dev.deviceType === 'desktop' ? (
-                    <Laptop className="w-5 h-5" />
-                  ) : dev.deviceType === 'tablet' ? (
-                    <Tablet className="w-5 h-5" />
-                  ) : (
-                    <Smartphone className="w-5 h-5" />
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-neutral-900">{dev.name}</span>
+                  {dev.isCurrent && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-black text-white">
+                      Current Device
+                    </span>
                   )}
                 </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-neutral-200 truncate">{dev.name}</span>
-                    {dev.isCurrent && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold shrink-0">
-                        THIS DEVICE
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-neutral-400 flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {dev.lastActive}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {dev.location}
-                    </span>
-                  </div>
-                  <div className="text-[10px] font-mono text-neutral-500 mt-0.5 break-all">
-                    {dev.os} • {dev.browser} {dev.ipAddress ? `• IP: ${dev.ipAddress}` : ''}
-                  </div>
+                <div className="text-[11px] text-neutral-500">
+                  {dev.os} • {dev.browser} • Last active: {dev.lastActive}
+                </div>
+                <div className="text-[11px] font-mono text-neutral-400">
+                  {dev.location} • {dev.ipAddress}
                 </div>
               </div>
 
@@ -163,16 +126,39 @@ export const LinkedDevicesTab: React.FC<Props> = ({ settings, updateSettings, sh
                 <button
                   type="button"
                   onClick={() => handleLogoutDevice(dev.id)}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-rose-400 hover:text-rose-300 text-xs font-bold border border-neutral-800 flex items-center justify-center gap-1 transition-colors self-end sm:self-auto"
+                  className="px-3 py-1.5 rounded-lg border border-black/[0.12] text-xs font-semibold text-neutral-700 hover:bg-black/[0.04] transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Log Out</span>
+                  Log Out
                 </button>
               )}
             </div>
           ))}
+
+          {devices.length === 0 && (
+            <div className="p-4 text-center text-xs text-neutral-400">
+              No linked devices
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Save / Cancel Footer */}
+      <div className="flex items-center justify-end gap-2 pt-2 pb-4">
+        <button
+          type="button"
+          onClick={() => showToast('Changes discarded')}
+          className="px-4 py-2 rounded-lg border border-black/[0.15] text-xs font-semibold text-neutral-700 hover:bg-black/[0.04] transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveTab}
+          className="px-5 py-2 rounded-lg bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-colors shadow-sm"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
   );
 };

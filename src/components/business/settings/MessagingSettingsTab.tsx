@@ -19,9 +19,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const MessagingSettingsTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const MessagingSettingsTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const messaging = settings.messaging;
 
   const [newShortcut, setNewShortcut] = useState('');

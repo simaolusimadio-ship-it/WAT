@@ -1,18 +1,4 @@
 import React, { useState } from 'react';
-import {
-  HelpCircle,
-  FileText,
-  Shield,
-  AlertTriangle,
-  Download,
-  ExternalLink,
-  MessageSquare,
-  Lock,
-  Flag,
-  UserX,
-  CheckCircle2,
-  Trash2,
-} from 'lucide-react';
 import { WATUserSettings } from '../../types/watUserSettings';
 
 interface Props {
@@ -39,27 +25,32 @@ export const HelpLegalComplianceTab: React.FC<Props> = ({
         lastExportDate: new Date().toISOString().split('T')[0],
       },
     }));
-    showToast('POPIA/GDPR Data Export archive generated and downloaded!');
+    showToast('Data export archive generated');
   };
 
   const handleSendReport = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportText.trim()) return;
-    showToast('Report submitted to WAT Trust & Safety team.');
+    showToast('Report submitted');
     setReportText('');
     setShowReportModal(false);
   };
 
+  const handleSaveTab = () => {
+    showToast('Settings saved');
+  };
+
   return (
-    <div className="space-y-6 text-neutral-200 animate-fade-in">
-      {/* 30. Help & Support */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-base font-bold text-neutral-100">30. 💡 Help, Support & FAQs</h3>
-          </div>
-          <span className="text-xs font-mono text-emerald-400">24/7 COPILOT SUPPORT</span>
+    <div className="space-y-6 text-neutral-900 bg-white">
+      {/* Help & Support */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+          <h2 className="text-sm sm:text-base font-bold text-neutral-900">
+            Help & Documentation
+          </h2>
+          <span className="text-[11px] font-mono text-neutral-500">
+            Resources
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -67,128 +58,96 @@ export const HelpLegalComplianceTab: React.FC<Props> = ({
             href="https://matrix.org/docs"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center justify-between transition-colors"
+            className="p-4 rounded-xl bg-white border border-black/[0.08] hover:bg-black/[0.02] flex items-center justify-between transition-colors"
           >
-            <div className="space-y-1">
-              <div className="text-xs font-bold text-neutral-200">Matrix Protocol Docs</div>
-              <div className="text-[10px] text-neutral-400">Federation and encryption specs</div>
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-neutral-900">Protocol Documentation</div>
+              <div className="text-[11px] text-neutral-500">Federation and encryption specifications</div>
             </div>
-            <ExternalLink className="w-4 h-4 text-emerald-400" />
           </a>
 
           <button
             type="button"
-            onClick={() => showToast('Opening WAT AI Support Chatbot...')}
-            className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center justify-between text-left transition-colors"
+            onClick={() => showToast('Connecting to support...')}
+            className="p-4 rounded-xl bg-white border border-black/[0.08] hover:bg-black/[0.02] flex items-center justify-between text-left transition-colors"
           >
-            <div className="space-y-1">
-              <div className="text-xs font-bold text-neutral-200">Contact Human & AI Support</div>
-              <div className="text-[10px] text-neutral-400">Instant resolution for account & billing</div>
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-neutral-900">Contact Support</div>
+              <div className="text-[11px] text-neutral-500">Account assistance and inquiries</div>
             </div>
-            <MessageSquare className="w-4 h-4 text-cyan-400" />
           </button>
         </div>
       </section>
 
-      {/* 31. Legal, POPIA & African Compliance */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-base font-bold text-neutral-100">31. 📜 Legal & POPIA / GDPR Compliance</h3>
-          </div>
-          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">
-            COMPLIANT
+      {/* Legal & Compliance */}
+      <section className="bg-white border border-black/[0.08] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+          <h2 className="text-sm sm:text-base font-bold text-neutral-900">
+            Legal & Compliance
+          </h2>
+          <span className="px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 text-[10px] font-mono font-semibold">
+            POPIA / GDPR
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-          <div className="text-xs font-bold text-neutral-200">
-            South African POPIA & Continental Data Privacy
-          </div>
-          <p className="text-[11px] text-neutral-400 leading-relaxed">
-            WAT adheres strictly to the Protection of Personal Information Act (POPIA Act 4 of 2013) and the African Union Convention on Cyber Security and Personal Data Protection (Malabo Convention). Personal data remains encrypted on federated Matrix homeservers.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              showToast('WAT Terms of Service v1.0 loaded.');
-            }}
-            className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center justify-between text-xs font-semibold text-neutral-300 transition-colors"
-          >
-            <span>Terms of Service</span>
-            <FileText className="w-4 h-4 text-neutral-500" />
-          </a>
-
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              showToast('WAT Privacy Policy v1.0 loaded.');
-            }}
-            className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center justify-between text-xs font-semibold text-neutral-300 transition-colors"
-          >
-            <span>Privacy Policy</span>
-            <Lock className="w-4 h-4 text-neutral-500" />
-          </a>
-        </div>
-      </section>
-
-      {/* 32 & 33. Report, Block & Data Management */}
-      <section className="bg-neutral-900/90 border border-neutral-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <h3 className="text-sm font-bold text-neutral-100">32 & 33. Report Center & Data Rights</h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setShowReportModal(true)}
-            className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center gap-3 text-left transition-colors"
-          >
-            <Flag className="w-4 h-4 text-amber-400" />
-            <div>
-              <div className="text-xs font-bold text-neutral-200">Report Spam, Fraud or Harassment</div>
-              <div className="text-[10px] text-neutral-400">Confidential safety review</div>
+        <div className="p-4 rounded-xl bg-white border border-black/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-neutral-900">Export Personal Data</div>
+            <div className="text-[11px] text-neutral-500">
+              Download your profile, contacts, and metadata archive
             </div>
-          </button>
+          </div>
 
           <button
             type="button"
             onClick={handleRequestDataExport}
-            className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 flex items-center gap-3 text-left transition-colors"
+            className="px-4 py-2 rounded-lg bg-black text-white font-semibold text-xs hover:bg-neutral-800 transition-colors"
           >
-            <Download className="w-4 h-4 text-cyan-400" />
-            <div>
-              <div className="text-xs font-bold text-neutral-200">Download Account & Message Data</div>
-              <div className="text-[10px] text-neutral-400">POPIA Section 23 Data Portability</div>
-            </div>
+            Request Data Archive
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            className="p-3.5 rounded-xl bg-white border border-black/[0.08] hover:bg-black/[0.02] text-left transition-colors"
+          >
+            <div className="text-xs font-bold text-neutral-900">Report a Violation</div>
+            <div className="text-[11px] text-neutral-500">Submit a safety or policy report</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => showToast('Terms of service displayed')}
+            className="p-3.5 rounded-xl bg-white border border-black/[0.08] hover:bg-black/[0.02] text-left transition-colors"
+          >
+            <div className="text-xs font-bold text-neutral-900">Terms of Service</div>
+            <div className="text-[11px] text-neutral-500">Read privacy and usage policies</div>
           </button>
         </div>
 
         {showReportModal && (
-          <form onSubmit={handleSendReport} className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3">
-            <h4 className="text-xs font-bold text-neutral-200">Submit Trust & Safety Report</h4>
+          <form onSubmit={handleSendReport} className="p-4 rounded-xl bg-white border border-black/[0.12] space-y-3">
+            <h3 className="text-xs font-bold text-neutral-900">Submit Report</h3>
             <textarea
-              rows={3}
-              placeholder="Describe the issue (e.g. fraudulent seller, impersonation, unsolicited spam)..."
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-xs text-neutral-200 outline-none resize-none"
+              placeholder="Describe the issue or violation..."
+              rows={3}
+              className="w-full bg-white border border-black/[0.12] rounded-lg p-2.5 text-xs text-neutral-900 outline-none"
             />
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs"
+                className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-xs"
               >
-                Send Report
+                Submit Report
               </button>
               <button
                 type="button"
                 onClick={() => setShowReportModal(false)}
-                className="px-3 py-1.5 rounded-xl bg-neutral-800 text-neutral-300 font-bold text-xs"
+                className="px-4 py-1.5 rounded-lg border border-black/[0.15] text-neutral-700 font-semibold text-xs"
               >
                 Cancel
               </button>
@@ -196,6 +155,24 @@ export const HelpLegalComplianceTab: React.FC<Props> = ({
           </form>
         )}
       </section>
+
+      {/* Save / Cancel Footer */}
+      <div className="flex items-center justify-end gap-2 pt-2 pb-4">
+        <button
+          type="button"
+          onClick={() => showToast('Changes discarded')}
+          className="px-4 py-2 rounded-lg border border-black/[0.15] text-xs font-semibold text-neutral-700 hover:bg-black/[0.04] transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveTab}
+          className="px-5 py-2 rounded-lg bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-colors shadow-sm"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
   );
 };

@@ -27,6 +27,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { GlassOrbAction } from './components/GlassOrbAction';
+import { AuthAndOnboardingFlow } from './components/auth/AuthAndOnboardingFlow';
 import {
   Home,
   MessageSquare,
@@ -53,9 +54,16 @@ const AppContent: React.FC = () => {
     setViewingUserProfile,
     isEditProfileOpen,
     setIsEditProfileOpen,
+    authStatus,
+    onboardingStatus,
   } = useChat();
 
   const totalUnread = rooms.reduce((acc, r) => acc + (r.unreadCount || 0), 0);
+
+  // If user is unauthenticated or actively onboarding, render Auth & Onboarding Flow
+  if (authStatus === 'UNAUTHENTICATED' || onboardingStatus === 'ONBOARDING_IN_PROGRESS') {
+    return <AuthAndOnboardingFlow />;
+  }
 
   // Global Keyboard Shortcuts (⌘K for Search, ⌘J for AI Command Center)
   useEffect(() => {

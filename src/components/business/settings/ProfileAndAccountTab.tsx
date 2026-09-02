@@ -24,9 +24,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const ProfileAndAccountTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const ProfileAndAccountTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const profile = settings.profile;
   const verification = settings.verification;
   const account = settings.account;

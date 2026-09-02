@@ -68,8 +68,7 @@ export const WelcomeDashboardView: React.FC = () => {
     walletTransactions,
     sendMoney,
     requestMoney,
-    toggleBusinessMode,
-    businessMode,
+    openBusinessSettings,
   } = useChat();
 
   const [activeSubTab, setActiveSubTab] = useState<PersonalSubTab>('overview');
@@ -234,18 +233,6 @@ export const WelcomeDashboardView: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={toggleBusinessMode}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
-                      businessMode === 'business'
-                        ? 'bg-black text-white border-black'
-                        : 'bg-black/[0.04] text-neutral-800 border-black/[0.08] hover:bg-black/[0.08]'
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>{businessMode === 'business' ? 'Business Mode' : 'Personal Mode'}</span>
-                  </button>
-
-                  <button
                     onClick={() => setIsQRModalOpen(true)}
                     className="p-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-neutral-700 border border-black/[0.08] transition-colors"
                     title="Share Identity QR"
@@ -299,12 +286,12 @@ export const WelcomeDashboardView: React.FC = () => {
         {/* ========================================================================= */}
         <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xl p-1.5 rounded-2xl border border-black/[0.06] overflow-x-auto no-scrollbar shadow-sm">
           {[
-            { id: 'overview', label: '🏠 Dashboard Overview' },
-            { id: 'wallet', label: '💳 WAT Wallet & Fintech', count: `${currencySymbol}${walletBalance.toLocaleString()}` },
-            { id: 'priority', label: '⚡ Priority Hub & AI Brief', count: priorityUrgent.length > 0 ? `${priorityUrgent.length} Urgent` : undefined },
-            { id: 'businesses', label: '🏢 Businesses & Ventures' },
-            { id: 'profile', label: '👤 Bio & Identity' },
-            { id: 'security', label: '🛡️ Security & E2EE' },
+            { id: 'overview', label: 'Dashboard Overview' },
+            { id: 'wallet', label: 'Wallet & Fintech', count: `${currencySymbol}${walletBalance.toLocaleString()}` },
+            { id: 'priority', label: 'Priority Hub', count: priorityUrgent.length > 0 ? `${priorityUrgent.length} Urgent` : undefined },
+            { id: 'businesses', label: 'Businesses & Ventures' },
+            { id: 'profile', label: 'Bio & Identity' },
+            { id: 'security', label: 'Security & E2EE' },
           ].map((t) => (
             <button
               key={t.id}
@@ -1093,12 +1080,21 @@ export const WelcomeDashboardView: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setActiveTab('business')}
-                  className="px-5 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white font-bold text-xs shadow-sm shrink-0 active:scale-95 transition-all"
-                >
-                  Manage CRM & Store
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => openBusinessSettings('profile_account')}
+                    className="px-4 py-2.5 rounded-xl bg-black/[0.05] hover:bg-black/[0.1] text-neutral-900 border border-black/[0.08] font-bold text-xs shadow-sm shrink-0 active:scale-95 transition-all flex items-center gap-1.5"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Business Settings</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('business')}
+                    className="px-5 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white font-bold text-xs shadow-sm shrink-0 active:scale-95 transition-all"
+                  >
+                    Manage CRM & Store
+                  </button>
+                </div>
               </div>
             </div>
           </div>

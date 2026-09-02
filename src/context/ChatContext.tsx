@@ -21,6 +21,9 @@ import {
   PriorityMeetingItem,
   PriorityPaymentItem,
   PriorityAIBrief,
+  AuthStatus,
+  MfaStatus,
+  OnboardingStatus,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -138,8 +141,12 @@ interface ChatContextType {
 
   // Business Suite & Mode
   products: ProductInfo[];
+  setProducts: React.Dispatch<React.SetStateAction<ProductInfo[]>>;
+  addProduct: (productData: Omit<ProductInfo, 'id'>) => ProductInfo;
   createInvoiceInChat: (amount: number, currency: InvoiceInfo['currency'], description: string, paymentMethod: InvoiceInfo['paymentMethod']) => void;
   shareProductInChat: (product: ProductInfo) => void;
+  shareProductToRooms: (product: ProductInfo, roomIds: string[]) => void;
+  shareProductToStatus: (product: ProductInfo) => void;
   businessMode: 'personal' | 'business';
   setBusinessMode: (mode: 'personal' | 'business') => void;
   toggleBusinessMode: () => void;
@@ -216,7 +223,36 @@ interface ChatContextType {
   generateSmartReplies: (lastMsg: string) => Promise<string[]>;
   rewriteText: (text: string, tone: string) => Promise<string>;
 
-  // Onboarding (WhatsApp Flow)
+  // Onboarding (WhatsApp Flow) & Auth Lifecycle
+  authStatus: AuthStatus;
+  setAuthStatus: (status: AuthStatus) => void;
+  mfaStatus: MfaStatus;
+  setMfaStatus: (status: MfaStatus) => void;
+  onboardingStatus: OnboardingStatus;
+  setOnboardingStatus: (status: OnboardingStatus) => void;
+  onboardingStep: number;
+  setOnboardingStep: (step: number) => void;
+  isLogoutConfirmOpen: boolean;
+  setIsLogoutConfirmOpen: (open: boolean) => void;
+
+  signUp: (formData: {
+    name: string;
+    dob: string;
+    country: string;
+    phone: string;
+    password: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  signIn: (
+    identifier: string,
+    password?: string
+  ) => Promise<{ success: boolean; requiresMfa?: boolean; user?: User; error?: string }>;
+  verifyLoginMfa: (code: string) => Promise<{ success: boolean; error?: string }>;
+  activateMfa: (method: 'authenticator' | 'sms', code: string) => Promise<{ success: boolean; error?: string }>;
+  skipMfa: () => void;
+  saveOnboardingStep: (step: number, partialData: Partial<User>) => void;
+  finishOnboarding: (userData: Partial<User>) => void;
+  logout: () => void;
+
   isOnboardingOpen: boolean;
   setIsOnboardingOpen: (open: boolean) => void;
   completeOnboarding: (userData: {
@@ -248,11 +284,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [currentUserId, setCurrentUserId] = useState<string>('user_lusimadio');
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
-  const [activeRoomId, setActiveRoomId] = useState<string>('room_kwame');
+  const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
   const [stories, setStories] = useState<StoryStatus[]>(INITIAL_STORIES);
   const [communities] = useState<CommunitySpace[]>(INITIAL_COMMUNITIES);
-  const [products] = useState<ProductInfo[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<ProductInfo[]>(INITIAL_PRODUCTS);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   // Business Mode & Wallet
@@ -361,6 +397,210 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false);
   const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
 
+  // Authentication, MFA & Onboarding Lifecycle State
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() => {
+    const saved = localStorage.getItem('wat_auth_status');
+    return (saved as AuthStatus) || 'AUTHENTICATED';
+  });
+
+  const [mfaStatus, setMfaStatus] = useState<MfaStatus>(() => {
+    const saved = localStorage.getItem('wat_mfa_status');
+    return (saved as MfaStatus) || 'MFA_ACTIVE';
+  });
+
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>(() => {
+    const saved = localStorage.getItem('wat_onboarding_status');
+    return (saved as OnboardingStatus) || 'ONBOARDING_COMPLETED';
+  });
+
+  const [onboardingStep, setOnboardingStep] = useState<number>(() => {
+    const saved = localStorage.getItem('wat_onboarding_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+
+  const [pendingLoginUser, setPendingLoginUser] = useState<User | null>(null);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+  // Sync lifecycle with localStorage
+  useEffect(() => {
+    localStorage.setItem('wat_auth_status', authStatus);
+  }, [authStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('wat_mfa_status', mfaStatus);
+  }, [mfaStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('wat_onboarding_status', onboardingStatus);
+  }, [onboardingStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('wat_onboarding_step', onboardingStep.toString());
+  }, [onboardingStep]);
+
+  // Sign Up method
+  const signUp = async (formData: {
+    name: string;
+    dob: string;
+    country: string;
+    phone: string;
+    password: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    const cleanHandle = `@${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}:wat.chat`;
+    const newUserId = `user_${Date.now()}`;
+    const newUser: User = {
+      id: newUserId,
+      name: formData.name,
+      handle: cleanHandle,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+      statusMessage: 'Available ✦ Building on WAT',
+      isOnline: true,
+      phone: formData.phone,
+      dob: formData.dob,
+      country: formData.country,
+      location: formData.country,
+      joinedDate: 'Joined recently',
+      deviceId: `WAT_DEVICE_${Math.floor(1000 + Math.random() * 9000)}`,
+      e2eeFingerprint: 'Xk9P/7Qw2+Vz8My4N1nF9Kj5Rt3sD8hL',
+      isPhonePublic: false,
+      isEmailPublic: false,
+      isLocationPublic: true,
+      isEducationPublic: true,
+      isCareerPublic: true,
+      mfaStatus: 'MFA_NOT_CONFIGURED',
+      onboardingStatus: 'ONBOARDING_IN_PROGRESS',
+    };
+
+    setUsers((prev) => [newUser, ...prev]);
+    setCurrentUserId(newUserId);
+    setAuthStatus('AUTHENTICATED');
+    setMfaStatus('MFA_NOT_CONFIGURED');
+    setOnboardingStatus('ONBOARDING_IN_PROGRESS');
+    setOnboardingStep(1);
+
+    return { success: true };
+  };
+
+  // Sign In method
+  const signIn = async (
+    identifier: string,
+    password?: string
+  ): Promise<{ success: boolean; requiresMfa?: boolean; user?: User; error?: string }> => {
+    const cleanId = identifier.trim().toLowerCase();
+    const foundUser = users.find(
+      (u) =>
+        u.handle.toLowerCase() === cleanId ||
+        (u.phone && u.phone.replace(/\s+/g, '').includes(cleanId.replace(/\s+/g, ''))) ||
+        (u.email && u.email.toLowerCase() === cleanId) ||
+        u.name.toLowerCase().includes(cleanId)
+    );
+
+    if (!foundUser) {
+      return { success: false, error: 'No account found with this identifier' };
+    }
+
+    if (foundUser.mfaStatus === 'MFA_ACTIVE') {
+      setPendingLoginUser(foundUser);
+      return { success: true, requiresMfa: true, user: foundUser };
+    }
+
+    // Direct login
+    setCurrentUserId(foundUser.id);
+    setAuthStatus('AUTHENTICATED');
+    setMfaStatus(foundUser.mfaStatus || 'MFA_SKIPPED');
+    setOnboardingStatus(foundUser.onboardingStatus || 'ONBOARDING_COMPLETED');
+    return { success: true, requiresMfa: false, user: foundUser };
+  };
+
+  // Verify Login MFA Challenge
+  const verifyLoginMfa = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    if (!pendingLoginUser) {
+      return { success: false, error: 'No pending authentication session' };
+    }
+    // Accept valid 6 digit code (demo: '123456' or any 6-digit number)
+    if (code.length === 6) {
+      setCurrentUserId(pendingLoginUser.id);
+      setAuthStatus('AUTHENTICATED');
+      setMfaStatus('MFA_ACTIVE');
+      setOnboardingStatus(pendingLoginUser.onboardingStatus || 'ONBOARDING_COMPLETED');
+      setPendingLoginUser(null);
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid verification code' };
+  };
+
+  // Activate MFA
+  const activateMfa = async (
+    method: 'authenticator' | 'sms',
+    code: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (code.length < 6) {
+      return { success: false, error: 'Please enter a valid 6-digit code' };
+    }
+    setMfaStatus('MFA_ACTIVE');
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === currentUserId ? { ...u, mfaStatus: 'MFA_ACTIVE', mfaMethod: method } : u
+      )
+    );
+    return { success: true };
+  };
+
+  // Skip MFA
+  const skipMfa = () => {
+    setMfaStatus('MFA_SKIPPED');
+    setUsers((prev) =>
+      prev.map((u) => (u.id === currentUserId ? { ...u, mfaStatus: 'MFA_SKIPPED' } : u))
+    );
+  };
+
+  // Save Onboarding Step
+  const saveOnboardingStep = (step: number, partialData: Partial<User>) => {
+    setOnboardingStep(step);
+    setUsers((prev) =>
+      prev.map((u) => (u.id === currentUserId ? { ...u, ...partialData } : u))
+    );
+  };
+
+  // Finish Onboarding
+  const finishOnboarding = (userData: Partial<User>) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === currentUserId
+          ? {
+              ...u,
+              ...userData,
+              onboardingStatus: 'ONBOARDING_COMPLETED',
+            }
+          : u
+      )
+    );
+    setOnboardingStatus('ONBOARDING_COMPLETED');
+    setIsOnboardingOpen(false);
+    soundEngine.playMessageSent();
+  };
+
+  // Logout method
+  const logout = () => {
+    setAuthStatus('UNAUTHENTICATED');
+    setMfaStatus('MFA_NOT_CONFIGURED');
+    setOnboardingStatus('ONBOARDING_NOT_STARTED');
+    setIsLogoutConfirmOpen(false);
+    setActiveRoomId('');
+    soundEngine.playChime();
+  };
+
+  // Switch demo user
+  const setCurrentUserById = (userId: string) => {
+    const found = users.find((u) => u.id === userId);
+    if (found) {
+      setCurrentUserId(found.id);
+      setAuthStatus('AUTHENTICATED');
+      setMfaStatus(found.mfaStatus || 'MFA_ACTIVE');
+      setOnboardingStatus(found.onboardingStatus || 'ONBOARDING_COMPLETED');
+    }
+  };
+
   // Onboarding (WhatsApp Flow) state
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
@@ -383,6 +623,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       phone: userData.phone,
       deviceId: 'WAT_PRIMARY_SECURE_DEVICE',
       e2eeFingerprint: 'Xk9P/7Qw2+Vz8My4N1nF9Kj5Rt3sD8hL',
+      mfaStatus: 'MFA_ACTIVE',
+      onboardingStatus: 'ONBOARDING_COMPLETED',
     };
 
     setUsers((prev) => {
@@ -393,6 +635,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return [updatedMe, ...prev];
     });
     setCurrentUserId(newUserId);
+    setAuthStatus('AUTHENTICATED');
+    setOnboardingStatus('ONBOARDING_COMPLETED');
     setIsOnboardingOpen(false);
     soundEngine.playMessageSent();
   };
@@ -551,15 +795,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       payloadSummary,
     };
     setMatrixLogs((prev) => [newLog, ...prev.slice(0, 49)]);
-  };
-
-  const setCurrentUserById = (userId: string) => {
-    setCurrentUserId(userId);
-    logMatrixEvent(
-      'm.session.switch',
-      `/_matrix/client/v3/login/device/${userId}`,
-      `Switched authenticated Matrix session to ${userId}`
-    );
   };
 
   const markRoomAsRead = (roomId: string) => {
@@ -1566,13 +1801,70 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  // Product operations
+  const addProduct = (productData: Omit<ProductInfo, 'id'>): ProductInfo => {
+    const newProduct: ProductInfo = {
+      ...productData,
+      id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      inStock: productData.inStock !== false,
+      stockCount: productData.stockCount ?? 20,
+      price: productData.isFree ? 0 : productData.price,
+      currency: productData.currency || 'USD',
+    };
+    setProducts((prev) => [newProduct, ...prev]);
+    soundEngine.playChime();
+    logMatrixEvent(
+      'm.product.catalog.add',
+      `/_matrix/client/v3/commerce/products/${newProduct.id}`,
+      `Listed new catalogue product: "${newProduct.name}" (${newProduct.isFree ? 'FREE' : `${newProduct.currency} ${newProduct.price}`})`
+    );
+    return newProduct;
+  };
+
   // Share product in chat
   const shareProductInChat = (product: ProductInfo) => {
     sendMessage({
-      text: `🛍️ Product: ${product.name} - ${product.currency} ${product.price}`,
+      text: `🛍️ Product: ${product.name} - ${product.isFree ? 'FREE' : `${product.currency} ${product.price}`}`,
       type: 'product_card',
       productInfo: product,
     });
+  };
+
+  const shareProductToRooms = (product: ProductInfo, roomIds: string[]) => {
+    const priceTag = product.isFree ? 'FREE' : `${product.currency} ${product.price}`;
+    roomIds.forEach((rId) => {
+      const newMsg: Message = {
+        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        roomId: rId,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        text: `🛍️ Product: ${product.name} - ${priceTag}`,
+        timestamp: Date.now(),
+        status: 'delivered',
+        type: 'product_card',
+        productInfo: product,
+        reactions: {},
+      };
+      setMessagesByRoom((prev) => ({
+        ...prev,
+        [rId]: [...(prev[rId] || []), newMsg],
+      }));
+    });
+    soundEngine.playMessageSent();
+  };
+
+  const shareProductToStatus = (product: ProductInfo) => {
+    const priceTag = product.isFree ? 'FREE' : `${product.currency} ${product.price}`;
+    addStory({
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      type: 'image',
+      contentUrl: product.image,
+      caption: `🛍️ ${product.name} (${priceTag})\n${product.description}`,
+    });
+    soundEngine.playChime();
   };
 
   // AI Helpers
@@ -1672,8 +1964,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addStory,
         markStoryViewed,
         products,
+        setProducts,
+        addProduct,
         createInvoiceInChat,
         shareProductInChat,
+        shareProductToRooms,
+        shareProductToStatus,
         matrixLogs,
         logMatrixEvent,
         activeTab,
@@ -1737,6 +2033,24 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isOnboardingOpen,
         setIsOnboardingOpen,
         completeOnboarding,
+        authStatus,
+        setAuthStatus,
+        mfaStatus,
+        setMfaStatus,
+        onboardingStatus,
+        setOnboardingStatus,
+        onboardingStep,
+        setOnboardingStep,
+        isLogoutConfirmOpen,
+        setIsLogoutConfirmOpen,
+        signUp,
+        signIn,
+        verifyLoginMfa,
+        activateMfa,
+        skipMfa,
+        saveOnboardingStep,
+        finishOnboarding,
+        logout,
         viewingUserProfile,
         setViewingUserProfile,
         isEditProfileOpen,

@@ -16,9 +16,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const AIBusinessTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const AIBusinessTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const ai = settings.aiBusiness;
 
   const handleAIChange = (key: keyof typeof ai, val: any) => {

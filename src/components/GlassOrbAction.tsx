@@ -14,14 +14,16 @@ import { soundEngine } from '../utils/audioSynth';
 
 export const GlassOrbAction: React.FC = () => {
   const {
-    setIsNewChatOpen,
+    activeTab,
+    activeRoomId,
+    activeCall,
+    isWebRTCCallOpen,
+    setIsNewChatModalOpen,
     setActiveTab,
-    setIsWebRTCCallOpen,
-    setCallType,
+    startCall,
   } = useChat();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeActionLabel, setActiveActionLabel] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -29,7 +31,6 @@ export const GlassOrbAction: React.FC = () => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
-        setActiveActionLabel(null);
       }
     };
     if (isOpen) {
@@ -37,6 +38,12 @@ export const GlassOrbAction: React.FC = () => {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
+
+  // The WAT Crystal Orb must only appear in Chats.
+  // It must disappear when user clicks on a specific chat to start a conversation, and during calls.
+  if (activeTab !== 'chats' || !!activeRoomId || !!activeCall || isWebRTCCallOpen) {
+    return null;
+  }
 
   const toggleOrb = () => {
     setIsOpen(!isOpen);
@@ -46,13 +53,11 @@ export const GlassOrbAction: React.FC = () => {
   const handleAction = (type: 'camera' | 'voice' | 'contact' | 'message') => {
     soundEngine.playChime();
     setIsOpen(false);
-    setActiveActionLabel(null);
 
     if (type === 'message' || type === 'contact') {
-      setIsNewChatOpen(true);
+      setIsNewChatModalOpen(true);
     } else if (type === 'voice') {
-      setCallType('audio');
-      setIsWebRTCCallOpen(true);
+      startCall('room_kwame', 'Kwame Mensah', 'audio');
     } else if (type === 'camera') {
       setActiveTab('stories');
     }
@@ -63,62 +68,71 @@ export const GlassOrbAction: React.FC = () => {
       ref={containerRef}
       className="fixed bottom-20 md:bottom-7 left-1/2 -translate-x-1/2 z-50 select-none flex flex-col items-center"
     >
-      {/* Expanded Arc Radial Options (Expands smoothly upwards from the center) */}
+      {/* Expanded Vertical Crystal Stack Options (Expands smoothly vertically upwards from the center) */}
       {isOpen && (
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none flex items-center justify-center">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col-reverse items-center gap-2.5 z-50 animate-fade-in pointer-events-auto min-w-[200px]">
           {/* Ambient crystal glow aura */}
-          <div className="absolute -inset-32 bg-white/70 backdrop-blur-2xl rounded-full -z-10 animate-fade-in pointer-events-none shadow-[0_20px_60px_rgba(0,0,0,0.12)]" />
+          <div className="absolute -inset-4 bg-white/70 backdrop-blur-2xl rounded-3xl -z-10 shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-black/[0.08]" />
 
-          {/* 1. Voice & Calls (Far Left Arc) */}
-          <button
-            onClick={() => handleAction('voice')}
-            onMouseEnter={() => setActiveActionLabel('Voice & Calls')}
-            onMouseLeave={() => setActiveActionLabel(null)}
-            className="pointer-events-auto absolute -top-16 -left-20 p-3.5 rounded-full bg-black hover:bg-neutral-800 text-white border border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-115 active:scale-95 transition-all duration-200 group flex items-center justify-center animate-fade-in"
-            title="Instant Voice & Calls"
-          >
-            <Mic className="w-5 h-5 text-white group-hover:text-emerald-400 transition-colors" />
-          </button>
-
-          {/* 2. Camera & QR (Center-Left Arc) */}
-          <button
-            onClick={() => handleAction('camera')}
-            onMouseEnter={() => setActiveActionLabel('Camera & QR')}
-            onMouseLeave={() => setActiveActionLabel(null)}
-            className="pointer-events-auto absolute -top-24 -left-7 p-3.5 rounded-full bg-black hover:bg-neutral-800 text-white border border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-115 active:scale-95 transition-all duration-200 group flex items-center justify-center animate-fade-in"
-            title="Camera & QR"
-          >
-            <Camera className="w-5 h-5 text-white group-hover:text-emerald-400 transition-colors" />
-          </button>
-
-          {/* 3. New Message (Center-Right Arc) */}
+          {/* 1. New Message */}
           <button
             onClick={() => handleAction('message')}
-            onMouseEnter={() => setActiveActionLabel('New Message')}
-            onMouseLeave={() => setActiveActionLabel(null)}
-            className="pointer-events-auto absolute -top-24 left-7 p-3.5 rounded-full bg-black hover:bg-neutral-800 text-white border border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-115 active:scale-95 transition-all duration-200 group flex items-center justify-center animate-fade-in"
-            title="New Message"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-white border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:scale-103 active:scale-95 transition-all duration-200 group text-left"
+            title="Start New Chat"
           >
-            <MessageSquarePlus className="w-5 h-5 text-white group-hover:text-emerald-400 transition-colors" />
+            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+              <MessageSquarePlus className="w-4 h-4 text-white group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white tracking-wide">New Chat</span>
+              <span className="text-[10px] text-neutral-400">Direct & encrypted</span>
+            </div>
           </button>
 
-          {/* 4. Add Contact (Far Right Arc) */}
+          {/* 2. Add Contact */}
           <button
             onClick={() => handleAction('contact')}
-            onMouseEnter={() => setActiveActionLabel('Add Contact')}
-            onMouseLeave={() => setActiveActionLabel(null)}
-            className="pointer-events-auto absolute -top-16 left-20 p-3.5 rounded-full bg-black hover:bg-neutral-800 text-white border border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.30)] hover:scale-115 active:scale-95 transition-all duration-200 group flex items-center justify-center animate-fade-in"
-            title="Add Contact"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-white border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:scale-103 active:scale-95 transition-all duration-200 group text-left"
+            title="Add Sovereign Contact"
           >
-            <UserPlus className="w-5 h-5 text-white group-hover:text-emerald-400 transition-colors" />
+            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+              <UserPlus className="w-4 h-4 text-white group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white tracking-wide">Add Contact</span>
+              <span className="text-[10px] text-neutral-400">Phone or Matrix ID</span>
+            </div>
           </button>
 
-          {/* Active Hover Label Pill */}
-          {activeActionLabel && (
-            <div className="absolute -top-36 whitespace-nowrap bg-black text-white text-xs font-bold tracking-wide px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 animate-fade-in">
-              {activeActionLabel}
+          {/* 3. Instant Voice & Calls */}
+          <button
+            onClick={() => handleAction('voice')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-white border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:scale-103 active:scale-95 transition-all duration-200 group text-left"
+            title="Instant Voice & Calls"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+              <Mic className="w-4 h-4 text-white group-hover:text-emerald-400 transition-colors" />
             </div>
-          )}
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white tracking-wide">Voice & Calls</span>
+              <span className="text-[10px] text-neutral-400">HD SFU Conference</span>
+            </div>
+          </button>
+
+          {/* 4. Camera & Stories */}
+          <button
+            onClick={() => handleAction('camera')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-white border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:scale-103 active:scale-95 transition-all duration-200 group text-left"
+            title="Camera & Stories"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+              <Camera className="w-4 h-4 text-white group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white tracking-wide">Camera & Stories</span>
+              <span className="text-[10px] text-neutral-400">Ephemeral status updates</span>
+            </div>
+          </button>
         </div>
       )}
 

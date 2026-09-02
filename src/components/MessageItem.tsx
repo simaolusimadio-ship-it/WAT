@@ -456,7 +456,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           )}
 
           {/* 4. Product Showcase Card */}
-          {message.type === 'product' && message.productInfo && (
+          {(message.type === 'product' || message.type === 'product_card') && message.productInfo && (
             <div
               className={`my-1 rounded-2xl overflow-hidden w-64 md:w-72 shadow-md border ${
                 isOwn
@@ -474,7 +474,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 <div className="flex items-center justify-between text-xs font-bold mb-1">
                   <span className="truncate">{message.productInfo.name}</span>
                   <span className={`shrink-0 ml-1 font-extrabold ${isOwn ? 'text-white' : 'text-neutral-900'}`}>
-                    ${message.productInfo.price}
+                    {message.productInfo.isFree
+                      ? 'FREE'
+                      : `${message.productInfo.currency || '$'} ${message.productInfo.price}`}
                   </span>
                 </div>
                 <p className={`text-[11px] line-clamp-2 mb-2 ${isOwn ? 'text-white/70' : 'text-neutral-500'}`}>

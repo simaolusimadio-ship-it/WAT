@@ -4,20 +4,48 @@ export interface SocialLink {
   label?: string;
 }
 
+export interface CareerItem {
+  id?: string;
+  role: string;
+  company: string;
+  period: string;
+  description?: string;
+}
+
+export interface EducationItem {
+  id?: string;
+  degree: string;
+  school: string;
+  year: string;
+  field?: string;
+}
+
+export type AuthStatus = 'UNAUTHENTICATED' | 'AUTHENTICATED';
+export type MfaStatus = 'MFA_NOT_CONFIGURED' | 'MFA_ACTIVE' | 'MFA_SKIPPED';
+export type OnboardingStatus = 'ONBOARDING_NOT_STARTED' | 'ONBOARDING_IN_PROGRESS' | 'ONBOARDING_COMPLETED';
+
 export interface User {
   id: string;
   name: string;
   handle: string; // e.g. @amara:wat.chat
   avatar: string;
   statusMessage: string;
+  headline?: string;
   bio?: string;
+  position?: string;
+  company?: string;
+  industry?: string;
   website?: string;
   socialLinks?: SocialLink[];
+  careerHistory?: CareerItem[];
+  education?: EducationItem[];
   isOnline: boolean;
   lastSeen?: string;
   phone?: string;
   email?: string;
   location?: string;
+  dob?: string;
+  country?: string;
   joinedDate?: string;
   isBusiness?: boolean;
   businessDetails?: {
@@ -30,6 +58,17 @@ export interface User {
   e2eeFingerprint: string;
   isBot?: boolean;
   customStatus?: string;
+  // Privacy visibility settings
+  isPhonePublic?: boolean;
+  isEmailPublic?: boolean;
+  isLocationPublic?: boolean;
+  isEducationPublic?: boolean;
+  isCareerPublic?: boolean;
+  // Security & Account metadata (private)
+  mfaStatus?: MfaStatus;
+  mfaMethod?: 'authenticator' | 'sms';
+  onboardingStatus?: OnboardingStatus;
+  passwordHash?: string;
 }
 
 export type RoomType = 'direct' | 'group' | 'channel' | 'community';
@@ -119,6 +158,8 @@ export interface ProductInfo {
   description: string;
   inStock: boolean;
   category: string;
+  stockCount?: number;
+  isFree?: boolean;
 }
 
 export interface MessageReaction {

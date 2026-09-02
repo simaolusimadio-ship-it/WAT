@@ -15,9 +15,15 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const ChatsStorageDevicesTab: React.FC<Props> = ({ settings, updateSettings, showToast }) => {
+export const ChatsStorageDevicesTab: React.FC<Props> = ({
+  settings,
+  updateSettings,
+  showToast,
+  onNavigateSection,
+}) => {
   const chatsStorage = settings.chatsStorage;
   const linkedDevices = settings.linkedDevices;
 

@@ -15,9 +15,10 @@ interface Props {
   settings: WATBusinessSettings;
   updateSettings: (updater: (prev: WATBusinessSettings) => WATBusinessSettings) => void;
   showToast: (msg: string) => void;
+  onNavigateSection?: (section: any) => void;
 }
 
-export const IntegrationsDevApiTab: React.FC<Props> = ({ settings, showToast }) => {
+export const IntegrationsDevApiTab: React.FC<Props> = ({ settings, showToast, onNavigateSection }) => {
   const integrations = settings.integrations;
   const devApi = settings.developerApi;
 
